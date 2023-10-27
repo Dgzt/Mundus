@@ -166,11 +166,11 @@ class HexagonHelperLineShape(width: Int,
                                                      currentTerrainChunkVertexResolution: Int,
                                                      gridWidthSize: Float) {
 
-        for ((cellZ, z) in (0 until terrainSystemDepthVertexResolution step (4 * width)).withIndex()) {
+        for ((cellZ, z) in (0 until terrainSystemDepthVertexResolution step (2 * width)).withIndex()) {
             if (z in bottomTerrainChunksVertexResolution..bottomTerrainChunksVertexResolution + currentTerrainChunkVertexResolution) {
                 val posX = -0.5f * width * gridWidthSize
                 val posY = 0f
-                val posZ = (1f * width + (z - bottomTerrainChunksVertexResolution)) * gridWidthSize
+                val posZ = (width + (z - bottomTerrainChunksVertexResolution)) * gridWidthSize
 
                 val pos = Vector3(posX, posY, posZ)
                 // Convert to world position

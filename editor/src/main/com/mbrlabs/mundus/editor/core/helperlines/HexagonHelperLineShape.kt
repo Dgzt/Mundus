@@ -106,6 +106,14 @@ class HexagonHelperLineShape(width: Int,
         val currentTerrainChunkVertexResolution = terrain.vertexResolution
         val gridWidthSize = terrain.terrainWidth.toFloat() / (currentTerrainChunkVertexResolution - 1).toFloat()
 
+        if (bottomTerrainChunksVertexResolution == 0) {
+            addBottomHalfHexagonHelperLineObjects(centerOfHelperObjects, terrainSystemWidthVertexResolution, rightTerrainChunksVertexResolution, currentTerrainChunkVertexResolution, gridWidthSize)
+        }
+
+        if (rightTerrainChunksVertexResolution == 0) {
+            addRightHalfHexagonHelperLineObjects(centerOfHelperObjects, terrainSystemDepthVertexResolution, rightTerrainChunksVertexResolution, currentTerrainChunkVertexResolution, gridWidthSize)
+        }
+
         for ((cellX, x) in ((1.5 * width).toInt() until terrainSystemWidthVertexResolution step (2 * width)).withIndex()) {
             val zInit = if (cellX % 2 == 0) 2 * width else width
 
@@ -130,41 +138,47 @@ class HexagonHelperLineShape(width: Int,
         return centerOfHelperObjects
     }
 
-    private fun addTopHalfHexagonHelperLineObjects(centerOfHelperObjects: Array<HelperLineCenterObject>, widthOffset: Float) {
-        val terrain = terrainComponent.terrainAsset.terrain
+    private fun addBottomHalfHexagonHelperLineObjects(centerOfHelperObjects: Array<HelperLineCenterObject>,
+                                                      terrainSystemWidthVertexResolution: Int,
+                                                      rightTerrainChunksVertexResolution: Int,
+                                                      currentTerrainChunkVertexResolution: Int,
+                                                      gridWidthSize: Float) {
 
-        var terrainX = 0f
-        var cellX = 0
+        for ((cellX, x) in ((1.5 * width).toInt() until terrainSystemWidthVertexResolution step (4 * width)).withIndex()) {
+            if (x in rightTerrainChunksVertexResolution..rightTerrainChunksVertexResolution + currentTerrainChunkVertexResolution) {
+                val posX = (x - rightTerrainChunksVertexResolution) * gridWidthSize
+                val posY = 0f
+                val posZ = -0.5f * width * gridWidthSize
 
-        while (terrainX +1 <= terrain.terrainWidth) {
-            val pos = Vector3(terrainX + 1.5f * widthOffset, 0f, 0f)
-            // Convert to world position
-            pos.mul(terrainComponent.modelInstance.transform)
+                val pos = Vector3(posX, posY, posZ)
+                // Convert to world position
+                pos.mul(terrainComponent.modelInstance.transform)
 
-            val helperLineCenterObject = helperLineCenterObjectPool.obtain().initialize(cellX + counterOffsetX, 0 + counterOffsetY, pos, false)
-            centerOfHelperObjects.add(helperLineCenterObject)
-
-            cellX += 2
-            terrainX += 4 * widthOffset
+                val helperLineCenterObject = helperLineCenterObjectPool.obtain().initialize(cellX + counterOffsetX, 0 + counterOffsetY, pos, false)
+                centerOfHelperObjects.add(helperLineCenterObject)
+            }
         }
     }
 
-    private fun addLeftHalfHexagonHelperLineObjects(centerOfHelperObjects: Array<HelperLineCenterObject>, widthOffset: Float, depthOffset: Float) {
-        val terrain = terrainComponent.terrainAsset.terrain
+    private fun addRightHalfHexagonHelperLineObjects(centerOfHelperObjects: Array<HelperLineCenterObject>,
+                                                     terrainSystemDepthVertexResolution: Int,
+                                                     bottomTerrainChunksVertexResolution: Int,
+                                                     currentTerrainChunkVertexResolution: Int,
+                                                     gridWidthSize: Float) {
 
-        var terrainY = depthOffset
-        var cellY = 0
+        for ((cellZ, z) in (0 until terrainSystemDepthVertexResolution step (4 * width)).withIndex()) {
+            if (z in bottomTerrainChunksVertexResolution..bottomTerrainChunksVertexResolution + currentTerrainChunkVertexResolution) {
+                val posX = -0.5f * width * gridWidthSize
+                val posY = 0f
+                val posZ = (1f * width + (z - bottomTerrainChunksVertexResolution)) * gridWidthSize
 
-        while (terrainY +1 <= terrain.terrainDepth) {
-            val pos = Vector3(-.5f * widthOffset, 0f, terrainY)
-            // Convert to world position
-            pos.mul(terrainComponent.modelInstance.transform)
+                val pos = Vector3(posX, posY, posZ)
+                // Convert to world position
+                pos.mul(terrainComponent.modelInstance.transform)
 
-            val helperLineCenterObject = helperLineCenterObjectPool.obtain().initialize(-1 + counterOffsetX, cellY + counterOffsetY, pos, false)
-            centerOfHelperObjects.add(helperLineCenterObject)
-
-            cellY += 2
-            terrainY += 2 * depthOffset
+                val helperLineCenterObject = helperLineCenterObjectPool.obtain().initialize(0 + counterOffsetX, cellZ + counterOffsetY, pos, false)
+                centerOfHelperObjects.add(helperLineCenterObject)
+            }
         }
     }
 

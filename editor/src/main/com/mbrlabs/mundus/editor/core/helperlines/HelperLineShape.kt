@@ -154,4 +154,28 @@ abstract class HelperLineShape(val width: Int,
         return allVertexResolution
     }
 
+    protected fun calculateTerrainSystemWidthVertexResolution(): Int {
+        var terrainSystemWidthVertexResolution = calculateRightTerrainChunksVertexResolution()
+
+        var checkingTerrainComponent: TerrainComponent? = terrainComponent
+        do {
+            terrainSystemWidthVertexResolution += checkingTerrainComponent!!.terrainAsset.terrain.vertexResolution
+            checkingTerrainComponent = checkingTerrainComponent.leftNeighbor
+        } while (checkingTerrainComponent != null)
+
+        return terrainSystemWidthVertexResolution
+    }
+
+    protected fun calculateTerrainSystemDepthVertexResolution(): Int {
+        var terrainSystemDepthVertexResolution = calculateBottomTerrainChunksVertexResolution()
+
+        var checkingTerrainComponent: TerrainComponent? = terrainComponent
+        do {
+            terrainSystemDepthVertexResolution += checkingTerrainComponent!!.terrainAsset.terrain.vertexResolution
+            checkingTerrainComponent = checkingTerrainComponent.topNeighbor
+        } while (checkingTerrainComponent != null)
+
+        return terrainSystemDepthVertexResolution
+    }
+
 }

@@ -111,7 +111,7 @@ class HexagonHelperLineShape(width: Int,
         }
 
         if (rightTerrainChunksVertexResolution == 0) {
-            addRightHalfHexagonHelperLineObjects(centerOfHelperObjects, terrainSystemDepthVertexResolution, rightTerrainChunksVertexResolution, currentTerrainChunkVertexResolution, gridWidthSize)
+            addRightHalfHexagonHelperLineObjects(centerOfHelperObjects, terrainSystemDepthVertexResolution, bottomTerrainChunksVertexResolution, currentTerrainChunkVertexResolution, gridWidthSize)
         }
 
         for ((cellX, x) in ((1.5 * width).toInt() until terrainSystemWidthVertexResolution step (2 * width)).withIndex()) {
@@ -166,11 +166,11 @@ class HexagonHelperLineShape(width: Int,
                                                      currentTerrainChunkVertexResolution: Int,
                                                      gridWidthSize: Float) {
 
-        for ((cellZ, z) in (0 until terrainSystemDepthVertexResolution step (2 * width)).withIndex()) {
+        for ((cellZ, z) in (width until terrainSystemDepthVertexResolution step (2 * width)).withIndex()) {
             if (z in bottomTerrainChunksVertexResolution..bottomTerrainChunksVertexResolution + currentTerrainChunkVertexResolution) {
                 val posX = -0.5f * width * gridWidthSize
                 val posY = 0f
-                val posZ = (width + (z - bottomTerrainChunksVertexResolution)) * gridWidthSize
+                val posZ = (z - bottomTerrainChunksVertexResolution) * gridWidthSize
 
                 val pos = Vector3(posX, posY, posZ)
                 // Convert to world position

@@ -42,7 +42,9 @@ import com.mbrlabs.mundus.editor.history.commands.TerrainHeightCommand;
 import com.mbrlabs.mundus.editor.history.commands.TerrainPaintCommand;
 import com.mbrlabs.mundus.editor.shader.EditorPBRTerrainShader;
 import com.mbrlabs.mundus.editor.tools.Tool;
+import com.mbrlabs.mundus.editor.tools.ToolType;
 import com.mbrlabs.mundus.editor.ui.UI;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Terrain Brush can modify the terrainAsset in various ways (BrushMode).
@@ -621,4 +623,9 @@ public abstract class TerrainBrush extends Tool {
         EditorPBRTerrainShader.setPickerRadius(radius);
     }
 
+    @NotNull
+    @Override
+    public ToolType getType() {
+        return ToolType.TERRAIN_BRUSH;
+    }
 }

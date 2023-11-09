@@ -26,6 +26,9 @@ import com.mbrlabs.mundus.editor.events.ComponentAddedEvent
 import com.mbrlabs.mundus.editor.events.GameObjectModifiedEvent
 import com.mbrlabs.mundus.editor.events.GameObjectSelectedEvent
 import com.mbrlabs.mundus.editor.events.ProjectChangedEvent
+import com.mbrlabs.mundus.editor.events.ToolActivatedEvent
+import com.mbrlabs.mundus.editor.tools.ToolManager
+import com.mbrlabs.mundus.editor.tools.ToolType
 import com.mbrlabs.mundus.editor.ui.widgets.AutoFocusScrollPane
 import com.mbrlabs.mundus.editor.utils.Log
 
@@ -38,7 +41,8 @@ class Inspector : VisTable(),
         GameObjectModifiedEvent.GameObjectModifiedListener,
         ComponentAddedEvent.ComponentAddedListener,
         AssetSelectedEvent.AssetSelectedListener,
-        ProjectChangedEvent.ProjectChangedListener{
+        ProjectChangedEvent.ProjectChangedListener,
+        ToolActivatedEvent.ToolActivatedEventListener{
 
     companion object {
         private val TAG = Inspector::class.java.simpleName
@@ -48,18 +52,18 @@ class Inspector : VisTable(),
         GAME_OBJECT, ASSET, EMPTY
     }
 
+    private val toolManager = Mundus.inject<ToolManager>()
+
     private var mode = InspectorMode.EMPTY
     private val root = VisTable()
     private val scrollPane = AutoFocusScrollPane(root)
 
-    private val goInspector: GameObjectInspector
-    private val assetInspector: AssetInspector
+    private val goInspector = GameObjectInspector()
+    private val assetInspector = AssetInspector()
+    val modelPlacementInspector = ModelPlacementInspector()
 
     init {
         Mundus.registerEventListener(this)
-
-        goInspector = GameObjectInspector()
-        assetInspector = AssetInspector()
 
         init()
     }
@@ -114,6 +118,15 @@ class Inspector : VisTable(),
 
     override fun onProjectChanged(event: ProjectChangedEvent) {
         clearWidgets()
+    }
+
+    override fun onToolActivatedEvent(event: ToolActivatedEvent) {
+        if (ToolType.MODEL_PLACEMENT == event.type) {
+            modelPlacementInspector.setup(toolManager.modelPlacementTool.model)
+
+            root.clear()
+            root.add(modelPlacementInspector).grow().row()
+        }
     }
 
 }

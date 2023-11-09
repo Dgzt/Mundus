@@ -280,7 +280,7 @@ class MundusToolbar(private val outline: Outline) : Toolbar(),
             toolManager.activateTool(toolManager.translateTool)
         }
         toolManager.translateTool.gameObjectSelected(event.gameObject)
-        Mundus.postEvent(ToolActivatedEvent())
+        Mundus.postEvent(ToolActivatedEvent(toolManager.translateTool.getType()))
     }
 
     override fun onAssetSelected(event: AssetSelectedEvent) {

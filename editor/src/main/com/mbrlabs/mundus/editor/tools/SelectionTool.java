@@ -31,6 +31,7 @@ import com.mbrlabs.mundus.editor.history.CommandHistory;
 import com.mbrlabs.mundus.editor.preferences.MundusPreferencesManager;
 import com.mbrlabs.mundus.editor.tools.picker.GameObjectPicker;
 import com.mbrlabs.mundus.editor.utils.Fa;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Marcus Brummer
@@ -142,6 +143,12 @@ public class SelectionTool extends Tool {
     @Override
     public void onDisabled() {
         getProjectManager().current().currScene.currentSelection = null;
+    }
+
+    @NotNull
+    @Override
+    public ToolType getType() {
+        return ToolType.SELECTION;
     }
 
     protected boolean isSelectWithRightButton() {

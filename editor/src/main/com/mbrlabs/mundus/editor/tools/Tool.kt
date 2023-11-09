@@ -43,5 +43,6 @@ abstract class Tool(var projectManager: ProjectManager,
     abstract fun act()
     abstract fun onActivated()
     abstract fun onDisabled()
+    abstract fun getType(): ToolType
 
 }

@@ -34,6 +34,7 @@ import com.mbrlabs.mundus.editor.history.CommandHistory;
 import com.mbrlabs.mundus.editor.scene3d.components.PickableModelComponent;
 import com.mbrlabs.mundus.editor.ui.UI;
 import com.mbrlabs.mundus.editor.utils.TerrainUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Marcus Brummer
@@ -62,6 +63,10 @@ public class ModelPlacementTool extends Tool {
         this.model = model;
         modelInstance = null;
         this.modelInstance = new ModelInstance(model.getModel());
+    }
+
+    public ModelAsset getModel() {
+        return model;
     }
 
     @Override
@@ -106,9 +111,10 @@ public class ModelPlacementTool extends Tool {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 
         if (modelInstance != null && button == Input.Buttons.LEFT) {
+            final String name = UI.INSTANCE.getInspector().getModelPlacementInspector().getModelName();
+
             int id = getProjectManager().current().obtainID();
-            GameObject modelGo = new GameObject(getProjectManager().current().currScene.sceneGraph, model.getName(),
-                    id);
+            GameObject modelGo = new GameObject(getProjectManager().current().currScene.sceneGraph, name, id);
             getProjectManager().current().currScene.sceneGraph.addGameObject(modelGo);
 
             modelInstance.transform.getTranslation(tempV3);
@@ -169,6 +175,12 @@ public class ModelPlacementTool extends Tool {
     @Override
     public void onDisabled() {
         dispose();
+        UI.INSTANCE.getInspector().clearWidgets();
     }
 
+    @NotNull
+    @Override
+    public ToolType getType() {
+        return ToolType.MODEL_PLACEMENT;
+    }
 }

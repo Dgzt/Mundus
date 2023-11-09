@@ -1,6 +1,8 @@
 package com.mbrlabs.mundus.editor.events
 
-class ToolActivatedEvent {
+import com.mbrlabs.mundus.editor.tools.ToolType
+
+class ToolActivatedEvent(val type: ToolType) {
 
     interface ToolActivatedEventListener {
         @Subscribe

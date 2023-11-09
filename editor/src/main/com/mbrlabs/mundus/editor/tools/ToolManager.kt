@@ -78,7 +78,7 @@ class ToolManager(private val inputManager: InputManager,
         if (shouldKeepSelection && selected != null) {
             (activeTool as SelectionTool?)!!.gameObjectSelected(selected)
         }
-        Mundus.postEvent(ToolActivatedEvent())
+        Mundus.postEvent(ToolActivatedEvent(activeTool!!.getType()))
     }
 
     fun deactivateTool() {

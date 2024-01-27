@@ -334,10 +334,12 @@ void main() {
 	v_position = vec3(pos.xyz) / pos.w;
 
 	#ifdef instanced
-		gl_Position = u_projViewTrans * i_worldTrans * pos;
+		mat4 asd = u_projViewTrans * i_worldTrans;
 	#else
-		gl_Position = u_projViewTrans * pos;
+		mat4 asd = u_projViewTrans;
 	#endif //instanced
+
+	gl_Position = asd * pos;
 
 	#ifdef shadowMapFlag
 		vec4 spos = u_shadowMapProjViewTrans * pos;

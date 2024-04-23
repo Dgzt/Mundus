@@ -20,8 +20,8 @@ import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter
+import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.PerspectiveCamera
 import com.badlogic.gdx.graphics.g3d.utils.FirstPersonCameraController
 import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -72,7 +72,7 @@ class Preview: Lwjgl3WindowAdapter(), ApplicationListener {
         scene.physicsSystem.setDebugDrawMode(btIDebugDraw.DebugDrawModes.DBG_DrawAabb)
     }
 
-    fun setCamPosition(cam: PerspectiveCamera) {
+    fun setCamPosition(cam: Camera) {
         scene.cam.position.set(cam.position)
         scene.cam.direction.set(cam.direction)
         scene.cam.up.set(cam.up)

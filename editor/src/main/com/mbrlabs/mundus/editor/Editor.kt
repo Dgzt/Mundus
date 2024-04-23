@@ -175,7 +175,12 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
             val renderWireframe = projectManager.current().renderWireframe
 
             if (!previewOpen) {
-                Gdx.gl.glLineWidth(globalPreferencesManager.getFloat(MundusPreferencesManager.GLOB_LINE_WIDTH_WIREFRAME, MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE))
+                Gdx.gl.glLineWidth(
+                    globalPreferencesManager.getFloat(
+                        MundusPreferencesManager.GLOB_LINE_WIDTH_WIREFRAME,
+                        MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE
+                    )
+                )
                 glProfiler.resume()
                 sg.update()
                 if (renderWireframe) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)

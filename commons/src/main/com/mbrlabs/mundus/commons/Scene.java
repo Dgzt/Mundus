@@ -34,7 +34,6 @@ import com.mbrlabs.mundus.commons.env.CameraSettings;
 import com.mbrlabs.mundus.commons.env.MundusEnvironment;
 import com.mbrlabs.mundus.commons.rendering.DefaultSceneRenderer;
 import com.mbrlabs.mundus.commons.rendering.SceneRenderer;
-import com.mbrlabs.mundus.commons.env.lights.DirectionalLight;
 import com.mbrlabs.mundus.commons.physics.bullet.BulletPhysicsSystem;
 import com.mbrlabs.mundus.commons.physics.enums.PhysicsState;
 import com.mbrlabs.mundus.commons.physics.bullet.BulletPhysicsSystem;
@@ -226,11 +225,6 @@ public class Scene implements Disposable {
     public BulletPhysicsSystem getPhysicsSystem() {
         return physicsSystem;
     }
-
-    public void setShadowMapper(ShadowMapper shadowMapperToSet) {
-        if (shadowMapper != null) {
-            shadowMapper.dispose();
-        }
 
     public void setSceneRenderer(SceneRenderer sceneRenderer) {
         this.sceneRenderer = sceneRenderer;

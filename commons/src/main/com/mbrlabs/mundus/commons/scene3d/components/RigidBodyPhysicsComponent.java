@@ -101,7 +101,7 @@ public class RigidBodyPhysicsComponent extends AbstractPhysicsComponent implemen
             model = modelComponent.modelInstance.model;
             modelComponent.getModelInstance().calculateBoundingBox(boundingBox);
         } else if (terrainComponent != null) {
-            model = terrainComponent.terrain.getTerrain().modelInstance.model;
+            model = terrainComponent.terrainAsset.getTerrain().getModel();
 
             if (physicsBodyType == PhysicsBody.STATIC) {
                 // For static terrains we use btHeightfieldTerrainShape which will only get be utilized
@@ -121,7 +121,7 @@ public class RigidBodyPhysicsComponent extends AbstractPhysicsComponent implemen
                     .scale(gameObject.getScale(scale))
                     .boundingBox(boundingBox)
                     .model(model)
-                    .terrainAsset(terrainComponent != null && physicsShape == PhysicsShape.TERRAIN ? terrainComponent.getTerrain() : null)
+                    .terrainAsset(terrainComponent != null && physicsShape == PhysicsShape.TERRAIN ? terrainComponent.getTerrainAsset() : null)
                     .build();
 
             collisionShape = shapeBuilderResult.shape;
@@ -157,8 +157,8 @@ public class RigidBodyPhysicsComponent extends AbstractPhysicsComponent implemen
         } else if (physicsShape == PhysicsShape.TERRAIN && terrainComponent != null) {
             Matrix4 goTrans = gameObject.getTransform();
             goTrans.getTranslation(translation);
-            float size = terrainComponent.getTerrain().getTerrain().terrainWidth;
-            float adjustedHeight = (terrainComponent.terrain.getMaxHeight() + terrainComponent.terrain.getMinHeight()) / 2f;
+            float size = terrainComponent.getTerrainAsset().getTerrain().terrainWidth;
+            float adjustedHeight = (terrainComponent.terrainAsset.getMaxHeight() + terrainComponent.terrainAsset.getMinHeight()) / 2f;
 
             Vector3 trans = new Vector3((size / 2f), adjustedHeight, (size / 2f)).add(translation);
             result.rigidBody.setWorldTransform(result.rigidBody.getWorldTransform().setTranslation(trans));
@@ -197,11 +197,6 @@ public class RigidBodyPhysicsComponent extends AbstractPhysicsComponent implemen
         }
 
         return collisionFlags;
-    }
-
-    @Override
-    public void render(float delta) {
-        // This component does not render
     }
 
     @Override

@@ -44,9 +44,9 @@ class PhysicsComponentWidget(physicsComponent: RigidBodyPhysicsComponent) : Comp
     }
 
     override fun setValues(go: GameObject) {
-        val c = go.findComponentByType(Component.Type.PHYSICS)
+        val c = go.findComponentByType<RigidBodyPhysicsComponent>(Component.Type.PHYSICS)
         if (c != null) {
-            component = c as RigidBodyPhysicsComponent
+            component = c
         }
     }
 }

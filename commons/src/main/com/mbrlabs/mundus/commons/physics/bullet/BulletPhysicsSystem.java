@@ -16,7 +16,7 @@
 
 package com.mbrlabs.mundus.commons.physics.bullet;
 
-import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.DebugDrawer;
@@ -164,7 +164,7 @@ public class BulletPhysicsSystem implements PhysicsSystem {
         dynamicsWorld.stepSimulation(timeStep, 1, 1f / 60f);
     }
 
-    public void drawDebug(PerspectiveCamera cam) {
+    public void drawDebug(Camera cam) {
         debugDrawer.begin(cam);
         dynamicsWorld.debugDrawWorld();
         debugDrawer.end();

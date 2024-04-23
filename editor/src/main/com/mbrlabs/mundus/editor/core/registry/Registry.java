@@ -16,16 +16,14 @@
 
 package com.mbrlabs.mundus.editor.core.registry;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.files.FileHandle;
-import com.mbrlabs.mundus.editor.core.kryo.KryoManager;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Manages global settings.
@@ -40,13 +38,12 @@ public class Registry {
     public static final String HOME_DIR = FilenameUtils.concat(FileUtils.getUserDirectoryPath(), ".mundus/");
     public static final String LOGS_DIR = FilenameUtils.concat(HOME_DIR, "logs/");
     public static final String TEMP_DIR = FilenameUtils.concat(HOME_DIR, "temp/");
+    public static final String PLUGINS_DIR = FilenameUtils.concat(HOME_DIR, "plugins/");
     public static final String HOME_DATA_FILE = FilenameUtils.concat(HOME_DIR, "mundus.registry");
 
     private List<ProjectRef> projects;
     private ProjectRef lastProject;
     private Settings settings;
-
-    private KryoManager kryoManager;
 
     public Registry() {
         projects = new ArrayList<>();

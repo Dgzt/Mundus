@@ -16,19 +16,20 @@
 
 package com.mbrlabs.mundus.editor.core.converter;
 
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.mbrlabs.mundus.commons.Scene;
 import com.mbrlabs.mundus.commons.assets.Asset;
 import com.mbrlabs.mundus.commons.dto.GameObjectDTO;
 import com.mbrlabs.mundus.commons.dto.SceneDTO;
 import com.mbrlabs.mundus.commons.env.CameraSettings;
-import com.mbrlabs.mundus.commons.env.lights.BaseLight;
-import com.mbrlabs.mundus.commons.env.lights.DirectionalLight;
-import com.mbrlabs.mundus.commons.env.lights.DirectionalLightsAttribute;
 import com.mbrlabs.mundus.commons.mapper.BaseLightConverter;
 import com.mbrlabs.mundus.commons.mapper.DirectionalLightConverter;
 import com.mbrlabs.mundus.commons.mapper.FogConverter;
 import com.mbrlabs.mundus.commons.scene3d.GameObject;
 import com.mbrlabs.mundus.commons.scene3d.SceneGraph;
+import com.mbrlabs.mundus.commons.shadows.MundusDirectionalShadowLight;
+import com.mbrlabs.mundus.commons.utils.LightUtils;
 import com.mbrlabs.mundus.commons.water.WaterResolution;
 import com.mbrlabs.mundus.editor.core.EditorScene;
 
@@ -59,12 +60,14 @@ public class SceneConverter {
         dto.setFog(FogConverter.convert(scene.environment));
         dto.setAmbientLight(BaseLightConverter.convert(scene.environment.getAmbientLight()));
 
-        DirectionalLightsAttribute directionalLight = scene.environment.get(DirectionalLightsAttribute.class, DirectionalLightsAttribute.Type);
-        dto.setDirectionalLight(DirectionalLightConverter.convert(scene, directionalLight.lights.first()));
+        MundusDirectionalShadowLight directionalLightEx = LightUtils.getDirectionalLight(scene.environment);
+        dto.setDirectionalLight(DirectionalLightConverter.convert(scene, directionalLightEx));
 
         // Water
         dto.setWaterResolution(scene.settings.waterResolution);
         dto.setWaterHeight(scene.settings.waterHeight);
+        dto.setEnableWaterReflections(scene.settings.enableWaterReflections);
+        dto.setEnableWaterRefractions(scene.settings.enableWaterRefractions);
 
         dto.setUseFrustumCulling(scene.settings.useFrustumCulling);
 
@@ -77,7 +80,9 @@ public class SceneConverter {
         dto.setCamDirZ(scene.cam.direction.z);
         dto.setCamNearPlane(scene.cam.near);
         dto.setCamFarPlane(scene.cam.far);
-        dto.setCamFieldOfView(scene.cam.fieldOfView);
+        if (scene.cam instanceof PerspectiveCamera) {
+            dto.setCamFieldOfView(((PerspectiveCamera) scene.cam).fieldOfView);
+        }
         return dto;
     }
 
@@ -94,16 +99,14 @@ public class SceneConverter {
 
         // environment stuff
         FogConverter.convert(dto.getFog(), scene.environment);
-        BaseLight ambientLight = BaseLightConverter.convert(dto.getAmbientLight());
+        Color ambientLight = BaseLightConverter.convert(dto.getAmbientLight());
         if (ambientLight != null) {
             scene.environment.setAmbientLight(ambientLight);
         }
 
-        DirectionalLight light = DirectionalLightConverter.convert(scene, dto.getDirectionalLight());
+        MundusDirectionalShadowLight light = DirectionalLightConverter.convert(scene, dto.getDirectionalLight());
         if (light != null) {
-            DirectionalLightsAttribute directionalLight = scene.environment.get(DirectionalLightsAttribute.class, DirectionalLightsAttribute.Type);
-            directionalLight.lights.clear();
-            directionalLight.lights.add(light);
+            scene.setDirectionalLight(light);
         }
 
         // Water stuff
@@ -113,6 +116,8 @@ public class SceneConverter {
 
         scene.settings.waterHeight = dto.getWaterHeight();
         scene.settings.useFrustumCulling = dto.isUseFrustumCulling();
+        scene.settings.enableWaterReflections = dto.isEnableWaterReflections();
+        scene.settings.enableWaterRefractions = dto.isEnableWaterRefractions();
 
         // scene graph
         scene.sceneGraph = new SceneGraph(scene);
@@ -127,7 +132,9 @@ public class SceneConverter {
         scene.cam.direction.set(dto.getCamDirX(), dto.getCamDirY(), dto.getCamDirZ());
         scene.cam.near = dto.getCamNearPlane() > 0 ? dto.getCamNearPlane() : CameraSettings.DEFAULT_NEAR_PLANE;
         scene.cam.far = dto.getCamFarPlane() > 0 ? dto.getCamFarPlane() : CameraSettings.DEFAULT_FAR_PLANE;
-        scene.cam.fieldOfView = dto.getCamFieldOfView() > 0 ? dto.getCamFieldOfView() : CameraSettings.DEFAULT_FOV;
+        if (scene.cam instanceof PerspectiveCamera) {
+            ((PerspectiveCamera) scene.cam).fieldOfView = dto.getCamFieldOfView() > 0 ? dto.getCamFieldOfView() : CameraSettings.DEFAULT_FOV;
+        }
         scene.cam.update();
 
         return scene;

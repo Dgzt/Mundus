@@ -29,21 +29,26 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.mbrlabs.mundus.commons.shaders.MundusPBRShaderProvider
 import com.mbrlabs.mundus.commons.utils.DebugRenderer
 import com.mbrlabs.mundus.commons.utils.ShaderUtils
+import com.mbrlabs.mundus.editor.core.project.ProjectAlreadyImportedException
 import com.mbrlabs.mundus.editor.core.project.ProjectContext
 import com.mbrlabs.mundus.editor.core.project.ProjectManager
+import com.mbrlabs.mundus.editor.core.registry.ProjectRef
 import com.mbrlabs.mundus.editor.core.registry.Registry
 import com.mbrlabs.mundus.editor.events.FilesDroppedEvent
 import com.mbrlabs.mundus.editor.events.FullScreenEvent
-import com.mbrlabs.mundus.editor.events.GameObjectModifiedEvent
+import com.mbrlabs.mundus.editor.events.LogEvent
+import com.mbrlabs.mundus.editor.events.LogType
+import com.mbrlabs.mundus.editor.events.PluginsLoadedEvent
 import com.mbrlabs.mundus.editor.events.ProjectChangedEvent
 import com.mbrlabs.mundus.editor.events.SceneChangedEvent
 import com.mbrlabs.mundus.editor.input.FreeCamController
 import com.mbrlabs.mundus.editor.input.InputManager
 import com.mbrlabs.mundus.editor.input.ShortcutController
+import com.mbrlabs.mundus.editor.preferences.MundusPreferencesManager
 import com.mbrlabs.mundus.editor.profiling.MundusGLProfiler
+import com.mbrlabs.mundus.editor.shader.EditorShaderProvider
 import com.mbrlabs.mundus.editor.tools.ToolManager
 import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.editor.ui.gizmos.GizmoManager
@@ -51,11 +56,19 @@ import com.mbrlabs.mundus.editor.utils.Colors
 import com.mbrlabs.mundus.editor.utils.Compass
 import com.mbrlabs.mundus.editor.utils.GlUtils
 import com.mbrlabs.mundus.editor.utils.UsefulMeshs
+import com.mbrlabs.mundus.pluginapi.EventExtension
+import com.mbrlabs.mundus.pluginapi.PluginEventManager
+import com.mbrlabs.mundus.pluginapi.RenderExtension
+import com.mbrlabs.mundus.pluginapi.TerrainSceneExtension
+import com.mbrlabs.mundus.editorcommons.events.GameObjectModifiedEvent
+import com.mbrlabs.mundus.pluginapi.DisposeExtension
 import net.mgsx.gltf.scene3d.scene.SceneRenderableSorter
 import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.lwjgl.opengl.GL11
+import org.pf4j.DefaultPluginManager
+import java.io.File
 
 /**
  * @author Marcus Brummer
@@ -82,6 +95,8 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
     private lateinit var glProfiler: MundusGLProfiler
     private lateinit var shapeRenderer: ShapeRenderer
     private lateinit var debugRenderer: DebugRenderer
+    private lateinit var globalPreferencesManager: MundusPreferencesManager
+    private lateinit var pluginManager: DefaultPluginManager
     private lateinit var previewWindow: Lwjgl3Window
 
     override fun create() {
@@ -95,10 +110,14 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
         gizmoManager = Mundus.inject()
         glProfiler = Mundus.inject()
         shapeRenderer = Mundus.inject()
+        debugRenderer = Mundus.inject()
+        globalPreferencesManager = Mundus.inject()
+        pluginManager = Mundus.inject<DefaultPluginManager>()
         setupInput()
 
-        debugRenderer = DebugRenderer(shapeRenderer)
-
+        debugRenderer.isEnabled = globalPreferencesManager.getBoolean(MundusPreferencesManager.GLOB_BOOL_DEBUG_RENDERER_ON, false)
+        debugRenderer.isAppearOnTop = globalPreferencesManager.getBoolean(MundusPreferencesManager.GLOB_BOOL_DEBUG_RENDERER_DEPTH_OFF, false)
+        debugRenderer.isShowFacingArrow = globalPreferencesManager.getBoolean(MundusPreferencesManager.GLOB_BOOL_DEBUG_FACING_ARROW, false)
         // TODO dispose this
         val axesModel = UsefulMeshs.createAxes()
         axesInstance = ModelInstance(axesModel)
@@ -118,6 +137,8 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
         )
 
         UI.toggleLoadingScreen(true, context.name)
+
+        initPluginSystem()
     }
 
     private fun setupInput() {
@@ -143,7 +164,8 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
         val sg = scene.sceneGraph
 
         val config = ShaderUtils.buildPBRShaderConfig(projectManager.current().assetManager.maxNumBones)
-        projectManager.modelBatch = ModelBatch(MundusPBRShaderProvider(config), SceneRenderableSorter())
+        projectManager.modelBatch?.dispose()
+        projectManager.modelBatch = ModelBatch(EditorShaderProvider(config), SceneRenderableSorter())
 
         val depthConfig = ShaderUtils.buildPBRShaderDepthConfig(projectManager.current().assetManager.maxNumBones)
         projectManager.setDepthBatch((ModelBatch(PBRDepthShaderProvider(depthConfig))))
@@ -151,20 +173,36 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
         UI.sceneWidget.setCam(context.currScene.cam)
         UI.sceneWidget.setRenderer {
             val renderWireframe = projectManager.current().renderWireframe
-            val renderDebug = projectManager.current().renderDebug
 
             if (!previewOpen) {
+                Gdx.gl.glLineWidth(globalPreferencesManager.getFloat(MundusPreferencesManager.GLOB_LINE_WIDTH_WIREFRAME, MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE))
                 glProfiler.resume()
                 sg.update()
                 if (renderWireframe) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
                 scene.render()
                 if (renderWireframe) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
                 glProfiler.pause()
+                Gdx.gl.glLineWidth(MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE)
 
-                if (renderDebug) {
+                if (debugRenderer.isEnabled) {
                     debugRenderer.begin(scene.cam)
                     debugRenderer.render(sg.gameObjects)
                     debugRenderer.end()
+                }
+
+                val renderExtensions = pluginManager.getExtensions(RenderExtension::class.java)
+                if (renderExtensions.isNotEmpty()) {
+                    renderExtensions.forEach {
+                        scene.batch.begin(scene.cam)
+                        try {
+                            scene.batch.render(it.renderableProvider, scene.environment)
+                        } catch (ex: Exception) {
+                            Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during plugin rendering! $ex"))
+                        } finally {
+                            scene.batch.end()
+                            Gdx.gl.glLineWidth(MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE)
+                        }
+                    }
                 }
 
                 toolManager.render()
@@ -248,6 +286,15 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
             compass = Compass(projectManager.loadingProject().currScene.cam)
             // change project; this will fire a ProjectChangedEvent
             projectManager.changeProject(projectManager.loadingProject())
+
+            pluginManager.getExtensions(TerrainSceneExtension::class.java).forEach {
+                try {
+                    it.sceneLoaded(projectManager.current().currScene.terrains)
+                } catch (ex: Exception) {
+                    Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during call plugin's sceneLoaded method! $ex"))
+                }
+            }
+
             UI.toggleLoadingScreen(false)
             UI.processVersionDialog()
         }
@@ -271,15 +318,49 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
     }
 
     private fun createDefaultProject(): ProjectContext? {
-        if (registry.lastOpenedProject == null || registry.projects.size == 0) {
+        if (registry.lastOpenedProject == null || !File(registry.lastOpenedProject.path).exists() || registry.projects.size == 0) {
             val name = "Default Project"
             var path = FileUtils.getUserDirectoryPath()
             path = FilenameUtils.concat(path, "MundusProjects")
+
+            // If the default project already exists, import it instead of recreate it.
+            // This can happen if the registry was deleted but the project folder was not.
+            val defaultProjectPath = FilenameUtils.concat(path, name)
+            val file = File(defaultProjectPath)
+            if (file.exists()) {
+                return try {
+                    projectManager.importProject(defaultProjectPath)
+                } catch (exception: ProjectAlreadyImportedException) {
+                    val projectReference = ProjectRef()
+                    projectReference.path = defaultProjectPath
+                    projectReference.name = name
+                    return projectManager.startAsyncProjectLoad(projectReference)
+                }
+            }
 
             return projectManager.createProject(name, path)
         }
 
         return null
+    }
+
+    private fun initPluginSystem() {
+        pluginManager.loadPlugins()
+        pluginManager.startPlugins()
+
+        pluginManager.plugins.forEach { Mundus.postEvent(LogEvent("Plugin loaded: ${it.pluginId}")) }
+
+        // Setup event handling in plugins
+        val pluginEventManager = PluginEventManager { listener -> Mundus.registerEventListener(listener) }
+        pluginManager.getExtensions(EventExtension::class.java).forEach {
+            try {
+                it.manageEvents(pluginEventManager)
+            } catch (ex: Exception) {
+                Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during manage plugin events! $ex"))
+            }
+        }
+
+        Mundus.postEvent(PluginsLoadedEvent())
     }
 
     override fun closeRequested(): Boolean {
@@ -305,6 +386,15 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
 
     override fun dispose() {
         debugRenderer.dispose()
+
+        pluginManager.getExtensions(DisposeExtension::class.java).forEach {
+            try {
+                it.dispose()
+            } catch (ex: Exception) {
+                Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during dispose plugin! $ex"))
+            }
+        }
+
         Mundus.dispose()
     }
 

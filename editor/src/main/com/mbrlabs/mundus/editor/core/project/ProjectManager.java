@@ -44,7 +44,7 @@ import com.mbrlabs.mundus.editor.assets.EditorAssetManager;
 import com.mbrlabs.mundus.editor.core.EditorScene;
 import com.mbrlabs.mundus.editor.core.converter.GameObjectConverter;
 import com.mbrlabs.mundus.editor.core.converter.SceneConverter;
-import com.mbrlabs.mundus.editor.core.kryo.KryoManager;
+import com.mbrlabs.mundus.editor.core.io.IOManager;
 import com.mbrlabs.mundus.editor.core.registry.ProjectRef;
 import com.mbrlabs.mundus.editor.core.registry.Registry;
 import com.mbrlabs.mundus.editor.core.scene.SceneManager;
@@ -81,13 +81,13 @@ public class ProjectManager implements Disposable {
     private ProjectContext currentProject;
     private ProjectContext loadingProject;
     private Registry registry;
-    private KryoManager kryoManager;
+    private IOManager ioManager;
     private ModelBatch modelBatch;
     private ModelBatch depthBatch;
 
-    public ProjectManager(KryoManager kryoManager, Registry registry, ModelBatch modelBatch) {
+    public ProjectManager(IOManager ioManager, Registry registry, ModelBatch modelBatch) {
         this.registry = registry;
-        this.kryoManager = kryoManager;
+        this.ioManager = ioManager;
         this.modelBatch = modelBatch;
         currentProject = new ProjectContext(-1);
     }
@@ -243,12 +243,19 @@ public class ProjectManager implements Disposable {
         ref.setPath(absolutePath);
 
         try {
-            ProjectContext context = kryoManager.loadProjectContext(ref);
+            ProjectContext context = ioManager.loadProjectContext(ref);
             context.path = absolutePath;
             UI.INSTANCE.toggleLoadingScreen(true, context.name);
             ref.setName(context.name);
             registry.getProjects().add(ref);
-            kryoManager.saveRegistry(registry);
+
+            // Set this import project as last opened to prevent NPE only
+            // if no project was opened before
+            if (registry.getLastProject() == null){
+                registry.setLastProject(ref);
+            }
+
+            ioManager.saveRegistry(registry);
             startAsyncProjectLoad(absolutePath, context);
             return context;
         } catch (Exception e) {
@@ -298,7 +305,7 @@ public class ProjectManager implements Disposable {
         assetManager.createAssetsTextFile();
 
         // save current in .pro file
-        kryoManager.saveProjectContext(projectContext);
+        ioManager.saveProjectContext(projectContext);
         // save scene in .mundus file
         SceneManager.saveScene(projectContext, projectContext.currScene);
 
@@ -316,6 +323,14 @@ public class ProjectManager implements Disposable {
     public ProjectContext loadLastProjectAsync() {
         ProjectRef lastOpenedProject = registry.getLastOpenedProject();
         if (lastOpenedProject != null) {
+
+            // Check if file exists first
+            File file = new File(lastOpenedProject.getPath());
+            if (!file.exists()) {
+                Log.error(TAG, "Last opened project does not exist: " + lastOpenedProject.getPath());
+                return null;
+            }
+
             try {
                 return startAsyncProjectLoad(lastOpenedProject);
             } catch (FileNotFoundException fnf) {
@@ -342,7 +357,7 @@ public class ProjectManager implements Disposable {
      *             if project can't be found
      */
     public ProjectContext startAsyncProjectLoad(ProjectRef ref) throws FileNotFoundException, MetaFileParseException {
-        ProjectContext context = kryoManager.loadProjectContext(ref);
+        ProjectContext context = ioManager.loadProjectContext(ref);
         context.path = ref.getPath();
         context.name = ref.getName();
 
@@ -360,13 +375,18 @@ public class ProjectManager implements Disposable {
     }
 
     public ProjectContext continueLoading() throws FileNotFoundException, MetaFileParseException, AssetNotFoundException {
-        boolean complete = loadingProject.assetManager.continueLoading();
+        try {
+            boolean complete = loadingProject.assetManager.continueLoading();
 
-        if (!complete) {
-            return loadingProject;
+            if (!complete) {
+                return loadingProject;
+            }
+
+            return finalizeLoading();
+        } catch (GdxRuntimeException exception) {
+            UI.INSTANCE.getToaster().error(exception.getCause().getMessage());
+            return finalizeLoading();
         }
-
-        return finalizeLoading();
     }
 
     private ProjectContext finalizeLoading() throws FileNotFoundException {
@@ -381,7 +401,7 @@ public class ProjectManager implements Disposable {
      * Opens a project.
      *
      * Opens a project. If a project is already open it will be disposed.
-     * 
+     *
      * @param context
      *            project context to open
      */
@@ -405,10 +425,11 @@ public class ProjectManager implements Disposable {
         registry.getLastOpenedProject().setName(context.name);
         registry.getLastOpenedProject().setPath(context.path);
 
-        kryoManager.saveRegistry(registry);
+        ioManager.saveRegistry(registry);
 
         Gdx.graphics.setTitle(constructWindowTitle());
         Mundus.INSTANCE.postEvent(new ProjectChangedEvent(context));
+        currentProject.currScene.onLoaded();
     }
 
     /**
@@ -461,7 +482,6 @@ public class ProjectManager implements Disposable {
         scene.batch = modelBatch;
         scene.depthBatch = depthBatch;
 
-        scene.setShadowMapShader(Shaders.INSTANCE.getShadowMapShader());
         scene.setDepthShader(Shaders.INSTANCE.getDepthShader());
 
         SceneGraph sceneGraph = scene.sceneGraph;
@@ -470,38 +490,16 @@ public class ProjectManager implements Disposable {
         }
 
         // create TerrainGroup for active scene
-        Array<Component> terrainComponents = new Array<>();
+        Array<TerrainComponent> terrainComponents = new Array<>();
         for (GameObject go : sceneGraph.getGameObjects()) {
             go.findComponentsByType(terrainComponents, Component.Type.TERRAIN, true);
         }
-        for (Component c : terrainComponents) {
-            if (c instanceof TerrainComponent) {
-                scene.terrains.add(((TerrainComponent) c).getTerrain());
-            }
+        for (TerrainComponent c : terrainComponents) {
+            scene.terrains.add(c);
         }
 
         return scene;
     }
-
-    /**
-     * Get all GameObjects from a scene. Partially loads the scene fast without using GL context
-     * so this can be called on a separate thread.
-     */
-    public Array<GameObject> getSceneGameObjects(ProjectContext context, String sceneName) throws FileNotFoundException {
-        SceneDTO sceneDTO = SceneManager.loadScene(context, sceneName);
-
-        Scene scene = new Scene(false);
-        for (GameObjectDTO descriptor : sceneDTO.getGameObjects()) {
-            scene.sceneGraph.addGameObject(GameObjectConverter.convert(descriptor, scene.sceneGraph, context.assetManager.getAssetMap()));
-        }
-        for (GameObject go : scene.sceneGraph.getGameObjects()) {
-            initGameObject(context, go);
-        }
-
-        scene.dispose();
-        return scene.sceneGraph.getGameObjects();
-    }
-
 
     /**
      * Loads and opens scene
@@ -519,10 +517,47 @@ public class ProjectManager implements Disposable {
 
             Gdx.graphics.setTitle(constructWindowTitle());
             Mundus.INSTANCE.postEvent(new SceneChangedEvent());
+            projectContext.currScene.onLoaded();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             Log.error(TAG, e.getMessage());
         }
+    }
+
+    /**
+     * Renames scene.
+     *
+     * @param project The project context
+     * @param oldSceneName The old name of scene
+     * @param newSceneName The new name of scene
+     */
+    public void renameScene(final ProjectContext project, final String oldSceneName, final String newSceneName) {
+        // Rename scene name in scene list
+        for(int i = 0; i < project.scenes.size; ++i) {
+            if (project.scenes.get(i).equals(oldSceneName)) {
+                project.scenes.removeIndex(i);
+                project.scenes.insert(i, newSceneName);
+            }
+        }
+
+        // If it is the current scene then rename it in project context too
+        if (project.currScene.getName().equals(oldSceneName)) {
+            project.currScene.setName(newSceneName);
+        }
+
+        // Rename scene file on filesystem
+        SceneManager.renameScene(project, oldSceneName, newSceneName);
+    }
+
+    /**
+     * Deletes scene
+     *
+     * @param project The project context
+     * @param sceneName The screen name
+     */
+    public void deleteScene(final ProjectContext project, final String sceneName) {
+        project.scenes.removeValue(sceneName, false);
+        SceneManager.deleteScene(project, sceneName);
     }
 
     private void initGameObject(ProjectContext context, GameObject root) {
@@ -556,8 +591,6 @@ public class ProjectManager implements Disposable {
                 } else {
                     Log.fatal(TAG, "model for modelInstance not found: {}", modelComponent.getModelAsset().getID());
                 }
-            } else if (c.getType() == Component.Type.TERRAIN) {
-                ((TerrainComponent) c).getTerrain().getTerrain().setTransform(go.getTransform());
             } else if (c.getType() == Component.Type.WATER) {
                 ((WaterComponent) c).getWaterAsset().water.setTransform(go.getTransform());
             }

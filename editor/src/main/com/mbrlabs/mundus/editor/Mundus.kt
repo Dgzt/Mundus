@@ -27,10 +27,12 @@ import com.badlogic.gdx.utils.Json
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.file.FileChooser
 import com.mbrlabs.mundus.commons.assets.meta.MetaLoader
-import com.mbrlabs.mundus.editor.preferences.MundusPreferencesManager
+import com.mbrlabs.mundus.commons.utils.DebugRenderer
 import com.mbrlabs.mundus.editor.assets.MetaSaver
 import com.mbrlabs.mundus.editor.assets.ModelImporter
-import com.mbrlabs.mundus.editor.core.kryo.KryoManager
+import com.mbrlabs.mundus.editor.core.io.IOManager
+import com.mbrlabs.mundus.editor.core.io.IOManagerProvider
+import com.mbrlabs.mundus.editor.core.io.MigrationIOManager
 import com.mbrlabs.mundus.editor.core.project.ProjectManager
 import com.mbrlabs.mundus.editor.core.registry.Registry
 import com.mbrlabs.mundus.editor.events.EventBus
@@ -38,6 +40,7 @@ import com.mbrlabs.mundus.editor.history.CommandHistory
 import com.mbrlabs.mundus.editor.input.FreeCamController
 import com.mbrlabs.mundus.editor.input.InputManager
 import com.mbrlabs.mundus.editor.input.ShortcutController
+import com.mbrlabs.mundus.editor.preferences.MundusPreferencesManager
 import com.mbrlabs.mundus.editor.profiling.MundusGLProfiler
 import com.mbrlabs.mundus.editor.shader.Shaders
 import com.mbrlabs.mundus.editor.tools.ToolManager
@@ -47,7 +50,10 @@ import com.mbrlabs.mundus.editor.ui.gizmos.GizmoManager
 import com.mbrlabs.mundus.editor.utils.Fa
 import ktx.inject.Context
 import ktx.inject.register
+import org.pf4j.DefaultPluginManager
+import org.pf4j.PluginManager
 import java.io.File
+import java.nio.file.Paths
 
 /**
  * Core class.
@@ -73,7 +79,8 @@ object Mundus {
     private val freeCamController: FreeCamController
     private val shortcutController: ShortcutController
     private val shapeRenderer: ShapeRenderer
-    private val kryoManager: KryoManager
+    private val debugRenderer: DebugRenderer
+    private val ioManager: IOManager
     private val projectManager: ProjectManager
     private val registry: Registry
     private val modelImporter: ModelImporter
@@ -83,6 +90,7 @@ object Mundus {
     private val json: Json
     private val globalPrefManager: MundusPreferencesManager
     private val glProfiler: MundusGLProfiler
+    private val pluginManager: PluginManager
 
     init {
         FileChooser.setDefaultPrefsName("mundus.editor.filechooser")
@@ -100,31 +108,36 @@ object Mundus {
 
         // DI
         shapeRenderer = ShapeRenderer()
+        debugRenderer = DebugRenderer(shapeRenderer)
         modelBatch = ModelBatch()
         input = InputManager()
         goPicker = GameObjectPicker()
         handlePicker = ToolHandlePicker()
-        kryoManager = KryoManager()
-        registry = kryoManager.loadRegistry()
-        freeCamController = FreeCamController()
+        ioManager = MigrationIOManager()
+        registry = ioManager.loadRegistry()
         commandHistory = CommandHistory(CommandHistory.DEFAULT_LIMIT)
         modelImporter = ModelImporter(registry)
-        projectManager = ProjectManager(kryoManager, registry, modelBatch)
-        toolManager = ToolManager(input, projectManager, goPicker, handlePicker, shapeRenderer,
-                commandHistory)
-        gizmoManager = GizmoManager()
-        shortcutController = ShortcutController(registry, projectManager, commandHistory, toolManager)
-        json = Json()
+        projectManager = ProjectManager(ioManager, registry, modelBatch)
+        pluginManager = DefaultPluginManager(Paths.get(Registry.PLUGINS_DIR))
+        freeCamController = FreeCamController(projectManager, goPicker, pluginManager)
         globalPrefManager = MundusPreferencesManager("global")
+        toolManager = ToolManager(input, projectManager, goPicker, handlePicker, shapeRenderer,
+                commandHistory, globalPrefManager)
+        gizmoManager = GizmoManager()
+        shortcutController = ShortcutController(registry, projectManager, commandHistory, toolManager, debugRenderer, globalPrefManager)
+        json = Json()
         glProfiler = MundusGLProfiler(Gdx.graphics)
+
+        val ioManagerProvider = IOManagerProvider(ioManager)
 
         // add to DI container
         context.register {
             bindSingleton(shapeRenderer)
+            bindSingleton(debugRenderer)
             bindSingleton(input)
             bindSingleton(goPicker)
             bindSingleton(handlePicker)
-            bindSingleton(kryoManager)
+            bindSingleton(ioManagerProvider)
             bindSingleton(registry)
             bindSingleton(commandHistory)
             bindSingleton(modelImporter)
@@ -136,6 +149,7 @@ object Mundus {
             bindSingleton(json)
             bindSingleton(globalPrefManager)
             bindSingleton(glProfiler)
+            bindSingleton(pluginManager)
 
             bindSingleton(MetaSaver())
             bindSingleton(MetaLoader())

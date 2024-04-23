@@ -31,10 +31,9 @@ public class TerrainComponentConverter {
     /**
      * Converts {@link TerrainComponentDTO} to {@link TerrainComponent}.
      */
-    public static TerrainComponent convert(TerrainComponentDTO terrainComponentDTO, GameObject gameObject,
-                                           Shaders shaders, AssetManager assetManager) {
-        TerrainComponent tc = new TerrainComponent(gameObject, shaders.getTerrainShader());
-        tc.setTerrain((TerrainAsset) assetManager.findAssetByID(terrainComponentDTO.getTerrainID()));
+    public static TerrainComponent convert(TerrainComponentDTO terrainComponentDTO, GameObject gameObject, AssetManager assetManager) {
+        TerrainComponent tc = new TerrainComponent(gameObject);
+        tc.setTerrainAsset((TerrainAsset) assetManager.findAssetByID(terrainComponentDTO.getTerrainID()));
 
         return tc;
     }

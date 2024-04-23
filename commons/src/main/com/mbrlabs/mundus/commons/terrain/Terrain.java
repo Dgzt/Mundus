@@ -22,9 +22,6 @@ import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.RenderableProvider;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
@@ -35,17 +32,21 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.Pool;
+import com.mbrlabs.mundus.commons.terrain.attributes.TerrainMaterialAttribute;
 import com.mbrlabs.mundus.commons.utils.MathUtils;
+import com.mbrlabs.mundus.commons.utils.Pools;
 import net.mgsx.gltf.loaders.shared.geometry.MeshTangentSpaceGenerator;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Marcus Brummer
  * @version 30-11-2015
  */
-public class Terrain implements RenderableProvider, Disposable {
+public class Terrain implements Disposable {
 
-    public static final int DEFAULT_SIZE = 1600;
+    public static final int DEFAULT_SIZE = 1200;
     public static final int DEFAULT_VERTEX_RESOLUTION = 180;
     public static final int DEFAULT_UV_SCALE = 60;
 
@@ -56,8 +57,8 @@ public class Terrain implements RenderableProvider, Disposable {
     private static final Vector3 c11 = new Vector3();
     private static final Vector3 tmp = new Vector3();
     private static final Vector2 tmpV2 = new Vector2();
+    private static final Matrix4 tmpMatrix = new Matrix4();
 
-    public Matrix4 transform;
     public float[] heightData;
     public int terrainWidth = 1200;
     public int terrainDepth = 1200;
@@ -67,22 +68,22 @@ public class Terrain implements RenderableProvider, Disposable {
     private final VertexAttributes attribs;
     private Vector2 uvScale = new Vector2(DEFAULT_UV_SCALE, DEFAULT_UV_SCALE);
     private float[] vertices;
+    private short[] indices;
     private final int stride;
     private final int posPos;
     private final int norPos;
     private final int uvPos;
 
     // Textures
-    private TerrainTexture terrainTexture;
-    private final Material material;
+    private TerrainMaterial terrainMaterial;
+    private Material material;
 
     // Mesh
     private Model model;
-    public ModelInstance modelInstance;
     private Mesh mesh;
+    private Map<Integer, Array<Integer>> vertexToTriangleMap;
 
     private Terrain(int vertexResolution) {
-        this.transform = new Matrix4();
         this.attribs = new VertexAttributes(
                 VertexAttribute.Position(),
                 VertexAttribute.Normal(),
@@ -98,10 +99,12 @@ public class Terrain implements RenderableProvider, Disposable {
         this.vertexResolution = vertexResolution;
         this.heightData = new float[vertexResolution * vertexResolution];
 
-        this.terrainTexture = new TerrainTexture();
-        this.terrainTexture.setTerrain(this);
+        this.terrainMaterial = new TerrainMaterial();
+        this.terrainMaterial.setTerrain(this);
+
+        // Attach our custom water material to the main material
         material = new Material();
-        material.set(new TerrainTextureAttribute(TerrainTextureAttribute.ATTRIBUTE_SPLAT0, terrainTexture));
+        material.set(TerrainMaterialAttribute.createTerrainMaterialAttribute(terrainMaterial));
     }
 
     public Terrain(int size, float[] heightData) {
@@ -111,29 +114,146 @@ public class Terrain implements RenderableProvider, Disposable {
         this.heightData = heightData;
     }
 
-    public void setTransform(Matrix4 transform) {
-        this.transform = transform;
-        modelInstance.transform = this.transform;
-    }
-
     public void init() {
         final int numVertices = this.vertexResolution * vertexResolution;
         final int numIndices = (this.vertexResolution - 1) * (vertexResolution - 1) * 6;
 
         mesh = new Mesh(true, numVertices, numIndices, attribs);
         this.vertices = new float[numVertices * stride];
-        mesh.setIndices(buildIndices());
+        indices = buildIndices();
+        mesh.setIndices(indices);
+        buildVertexToTriangleMap();
         buildVertices();
         mesh.setVertices(vertices);
-
         MeshPart meshPart = new MeshPart(null, mesh, 0, numIndices, GL20.GL_TRIANGLES);
         meshPart.update();
         ModelBuilder mb = new ModelBuilder();
         mb.begin();
         mb.part(meshPart, material);
         model = mb.end();
-        modelInstance = new ModelInstance(model);
-        modelInstance.transform = transform;
+    }
+
+    /**
+     * This method builds a map that associates each vertex index with a list of indices
+     * of triangles that the vertex is part of. This map is used for efficient lookup
+     * of adjacent triangles when calculating vertex normals.
+     *
+     * The map is stored in the instance variable vertexToTriangleMap, where the key is
+     * the vertex index and the value is a list of triangle indices.
+     *
+     * Note: This method is to be called during the mesh building process, after the
+     * indices array has been populated.
+     */
+    private void buildVertexToTriangleMap() {
+        vertexToTriangleMap = new HashMap<>();
+        for (int i = 0; i < indices.length; i += 3) {
+            int triangleIndex = i / 3;
+            for (int j = 0; j < 3; j++) {
+                int vertexIndex = (indices[i + j] & 0xFFFF);
+                Array<Integer> triangleIndices = vertexToTriangleMap.get(vertexIndex);
+                if (triangleIndices == null) {
+                    triangleIndices = new Array<>();
+                    vertexToTriangleMap.put(vertexIndex, triangleIndices);
+                }
+                triangleIndices.add(triangleIndex);
+            }
+        }
+    }
+
+    /**
+     * This method calculates and sets the average normal for each vertex in the terrain mesh.
+     * It first calculates the normal of each face (triangle) in the mesh, then for each vertex,
+     * it calculates the average normal from the normals of all faces that include this vertex.
+     *
+     * @param numIndices   The total number of indices in the index buffer, representing the total number of vertices in the mesh.
+     * @param numVertices  The total number of unique vertices in the vertex buffer.
+     *
+     * Note: This method should be called after the vertices and indices of the mesh have been defined and set.
+     * It directly modifies the vertices array to set the normal for each vertex.
+     */
+    private void calculateAverageNormals(int numIndices, int numVertices) {
+        Vector3 v1 = Pools.vector3Pool.obtain();
+        Vector3 v2 = Pools.vector3Pool.obtain();
+        Vector3 v3 = Pools.vector3Pool.obtain();
+
+        // Calculate face normals for each triangle and store them in an array
+        Vector3[] faceNormals = new Vector3[numIndices / 3];
+        for (int i = 0; i < numIndices; i += 3) {
+            getVertexPos(v1, indices[i] & 0xFFFF);
+            getVertexPos(v2, indices[i + 1] & 0xFFFF);
+            getVertexPos(v3, indices[i + 2] & 0xFFFF);
+            Vector3 normal = calculateFaceNormal(new Vector3(), v1, v2, v3);
+            faceNormals[i / 3] = normal;
+        }
+
+        // Calculate and set vertex normals
+        for (int i = 0; i < numVertices; i++) {
+            calculateVertexNormal(v1, i, faceNormals);
+            setVertexNormal(i, v1);
+        }
+
+        Pools.vector3Pool.free(v1);
+        Pools.vector3Pool.free(v2);
+        Pools.vector3Pool.free(v3);
+    }
+
+    /**
+     * Retrieve the vertex x,y,z position from the vertices array for the given vertex index.
+     */
+    private void getVertexPos(Vector3 out, int index) {
+        int start = index * stride;
+        out.set(vertices[start + posPos], vertices[start + posPos + 1], vertices[start + posPos + 2]);
+    }
+
+    /**
+     * Set the vertex x,y,z normal in the vertices array for the given vertex index.
+     */
+    private void setVertexNormal(int vertexIndex, Vector3 normal) {
+        int start = vertexIndex * stride;
+        vertices[start + norPos] = normal.x;
+        vertices[start + norPos + 1] = normal.y;
+        vertices[start + norPos + 2] = normal.z;
+    }
+
+    /**
+     * This method calculates the normal of a face in 3D space given its three vertices.
+     * The face is assumed to be a triangle.
+     *
+     * @param out The Vector3 to store the result in.
+     * @param vertex1 The first vertex of the triangle.
+     * @param vertex2 The second vertex of the triangle.
+     * @param vertex3 The third vertex of the triangle.
+     *
+     * @return A normalized Vector3 representing the normal of the face.
+     */
+    private Vector3 calculateFaceNormal(Vector3 out, Vector3 vertex1, Vector3 vertex2, Vector3 vertex3) {
+        Vector3 edge1 = vertex2.sub(vertex1); // Vector from vertex1 to vertex2
+        Vector3 edge2 = vertex3.sub(vertex1); // Vector from vertex1 to vertex3
+        out.set(edge1).crs(edge2); // Cross product of edge1 and edge2
+        return out.nor(); // Return the normalized normal vector
+    }
+
+    /**
+     * This method calculates the average normal of a vertex by averaging the normals
+     * of all the faces that the vertex is part of.
+     *
+     * @param vertexIndex The index of the vertex for which the normal is to be calculated.
+     * @param faceNormals An array containing the normals of all faces in the mesh.
+     *
+     * @return A normalized Vector3 representing the average normal of the vertex.
+     */
+    private Vector3 calculateVertexNormal(Vector3 out, int vertexIndex, Vector3[] faceNormals) {
+        Vector3 vertexNormal = out.set(0,0,0);
+        Array<Integer> triangleIndices = vertexToTriangleMap.get(vertexIndex);
+        if (triangleIndices != null) {
+            for (int triangleIndex : triangleIndices) {
+                Vector3 faceNormal = faceNormals[triangleIndex];
+                if (faceNormal != null) {
+                    vertexNormal.add(faceNormal);
+                }
+            }
+        }
+        return vertexNormal.nor();
     }
 
     public Vector3 getVertexPosition(Vector3 out, int x, int z) {
@@ -144,10 +264,20 @@ public class Terrain implements RenderableProvider, Disposable {
         return out;
     }
 
-    public float getHeightAtWorldCoord(float worldX, float worldZ) {
-        transform.getTranslation(c00);
-        float terrainX = worldX - c00.x;
-        float terrainZ = worldZ - c00.z;
+    /**
+     * Returns the terrain height at the given world coordinates, in world coordinates.
+     *
+     * @param worldX X world position to get height
+     * @param worldZ Z world position to get height
+     * @param terrainTransform The world transform (modelInstance transform) of the terrain
+     * @return
+     */
+    public float getHeightAtWorldCoord(float worldX, float worldZ, Matrix4 terrainTransform) {
+        // Translates world coordinates to local coordinates
+        tmp.set(worldX, 0f, worldZ).mul(tmpMatrix.set(terrainTransform).inv());
+
+        float terrainX = tmp.x;
+        float terrainZ = tmp.z;
 
         float gridSquareSize = terrainWidth / ((float) vertexResolution - 1);
         int gridX = (int) Math.floor(terrainX / gridSquareSize);
@@ -163,35 +293,51 @@ public class Terrain implements RenderableProvider, Disposable {
         c01.set(1, heightData[(gridZ + 1) * vertexResolution + gridX], 0);
         c10.set(0, heightData[gridZ * vertexResolution + gridX + 1], 1);
 
-        // we are in upper left triangle of the square
-        if (xCoord <= (1 - zCoord)) {
+        float height;
+        if (xCoord <= (1 - zCoord)) { // we are in upper left triangle of the square
             c00.set(0, heightData[gridZ * vertexResolution + gridX], 0);
-            return MathUtils.barryCentric(c00, c10, c01, tmpV2.set(zCoord, xCoord));
+            height = MathUtils.barryCentric(c00, c10, c01, tmpV2.set(zCoord, xCoord));
+        } else { // bottom right triangle
+            c11.set(1, heightData[(gridZ + 1) * vertexResolution + gridX + 1], 1);
+            height = MathUtils.barryCentric(c10, c11, c01, tmpV2.set(zCoord, xCoord));
         }
-        // bottom right triangle
-        c11.set(1, heightData[(gridZ + 1) * vertexResolution + gridX + 1], 1);
-        return MathUtils.barryCentric(c10, c11, c01, tmpV2.set(zCoord, xCoord));
+
+        // Translates to world coordinate
+        height *= terrainTransform.getScale(tmp).y;
+        return height;
     }
 
-    public Vector3 getRayIntersection(Vector3 out, Ray ray) {
+    /**
+     * Casts the given ray to determine where it intersects on the terrain.
+     *
+     * @param out Vector3 to populate with intersect point with
+     * @param ray the ray to cast
+     * @param terrainTransform The world transform (modelInstance transform) of the terrain
+     * @return
+     */
+    public Vector3 getRayIntersection(Vector3 out, Ray ray, Matrix4 terrainTransform) {
         // TODO improve performance. use binary search
         float curDistance = 2;
         int rounds = 0;
 
         ray.getEndPoint(out, curDistance);
-        boolean isUnder = isUnderTerrain(out);
+        boolean isUnder = isUnderTerrain(out, terrainTransform);
 
         while (true) {
             rounds++;
             ray.getEndPoint(out, curDistance);
 
-            boolean u = isUnderTerrain(out);
+            boolean u = isUnderTerrain(out, terrainTransform);
             if (u != isUnder || rounds == 20000) {
                 return out;
             }
             curDistance += u ? -0.1f : 0.1f;
         }
 
+    }
+
+    public Material getMaterial() {
+        return material;
     }
 
     private short[] buildIndices() {
@@ -220,10 +366,13 @@ public class Terrain implements RenderableProvider, Disposable {
         for (int x = 0; x < vertexResolution; x++) {
             for (int z = 0; z < vertexResolution; z++) {
                 calculateVertexAt(tempVertexInfo, x, z);
-                calculateNormalAt(tempVertexInfo, x, z);
                 setVertex(z * vertexResolution + x, tempVertexInfo);
             }
         }
+
+        final int numVertices = this.vertexResolution * vertexResolution;
+        final int numIndices = (this.vertexResolution - 1) * (vertexResolution - 1) * 6;
+        calculateAverageNormals(numIndices, numVertices);
     }
 
     private void setVertex(int index, MeshPartBuilder.VertexInfo info) {
@@ -238,9 +387,10 @@ public class Terrain implements RenderableProvider, Disposable {
             vertices[index + uvPos + 1] = info.uv.y;
         }
         if (norPos >= 0) {
-            vertices[index + norPos] = info.normal.x;
-            vertices[index + norPos + 1] = info.normal.y;
-            vertices[index + norPos + 2] = info.normal.z;
+            // The final normal is calculated after vertices are built in calculateAverageNormals
+            vertices[index + norPos] = 0f;
+            vertices[index + norPos + 1] = 1f;
+            vertices[index + norPos + 2] = 0f;
         }
     }
 
@@ -264,15 +414,6 @@ public class Terrain implements RenderableProvider, Disposable {
     }
 
     /**
-     * Calculates normal of a vertex at x,y based on the verticesOnZ of the
-     * surrounding vertices
-     */
-    private MeshPartBuilder.VertexInfo calculateNormalAt(MeshPartBuilder.VertexInfo out, int x, int y) {
-        getNormalAt(out.normal, x, y);
-        return out;
-    }
-
-    /**
      * Get normal at world coordinates. The methods calculates exact point
      * position in terrain coordinates and returns normal at that point. If
      * point doesn't belong to terrain -- it returns default
@@ -282,13 +423,17 @@ public class Terrain implements RenderableProvider, Disposable {
      *            the x coord in world
      * @param worldZ
      *            the z coord in world
+     * @param terrainTransform
+     *             The world transform (modelInstance transform) of the terrain
      * @return normal at that point. If point doesn't belong to terrain -- it
      *         returns default <code>Vector.Y<code> normal.
      */
-    public Vector3 getNormalAtWordCoordinate(Vector3 out, float worldX, float worldZ) {
-        transform.getTranslation(c00);
-        float terrainX = worldX - c00.x;
-        float terrainZ = worldZ - c00.z;
+    public Vector3 getNormalAtWordCoordinate(Vector3 out, float worldX, float worldZ, Matrix4 terrainTransform) {
+        // Translates world coordinates to local coordinates
+        tmp.set(worldX, 0f, worldZ).mul(tmpMatrix.set(terrainTransform).inv());
+
+        float terrainX = tmp.x;
+        float terrainZ = tmp.z;
 
         float gridSquareSize = terrainWidth / ((float) vertexResolution - 1);
         int gridX = (int) Math.floor(terrainX / gridSquareSize);
@@ -302,61 +447,58 @@ public class Terrain implements RenderableProvider, Disposable {
     }
 
     /**
-     * Get Normal at x,y point of terrain
+     * Get Vertex Normal at x,z point of terrain
      *
      * @param out
      *            Output vector
      * @param x
      *            the x coord on terrain
-     * @param y
-     *            the y coord on terrain( actual z)
+     * @param z
+     *            the z coord on terrain
      * @return the normal at the point of terrain
      */
-    public Vector3 getNormalAt(Vector3 out, int x, int y) {
-        // handle edges of terrain
-        int xP1 = (x + 1 >= vertexResolution) ? vertexResolution - 1 : x + 1;
-        int yP1 = (y + 1 >= vertexResolution) ? vertexResolution - 1 : y + 1;
-        int xM1 = (x - 1 < 0) ? 0 : x - 1;
-        int yM1 = (y - 1 < 0) ? 0 : y - 1;
-
-        float hL = heightData[y * vertexResolution + xM1];
-        float hR = heightData[y * vertexResolution + xP1];
-        float hD = heightData[yM1 * vertexResolution + x];
-        float hU = heightData[yP1 * vertexResolution + x];
-        out.x = hL - hR;
-        out.y = 2;
-        out.z = hD - hU;
-        out.nor();
-        return out;
+    public Vector3 getNormalAt(Vector3 out, int x, int z) {
+        int vertexIndex = z * vertexResolution + x;
+        int start = vertexIndex * stride;
+        return out.set(vertices[start + norPos], vertices[start + norPos + 1], vertices[start + norPos + 2]);
     }
 
-    public boolean isUnderTerrain(Vector3 worldCoords) {
+    /**
+     * Checks if given world coordinates are above or below the terrain
+     * @param worldCoords the world coordinates to check
+     * @param terrainTransform the world transform (modelInstance transform) of the terrain
+     * @return boolean true if under the terrain, else false
+     */
+    public boolean isUnderTerrain(Vector3 worldCoords, Matrix4 terrainTransform) {
         // Factor in world height position as well via getPosition.
-        float terrainHeight = getHeightAtWorldCoord(worldCoords.x, worldCoords.z) + getPosition(tmp).y;
+        float terrainHeight = getHeightAtWorldCoord(worldCoords.x, worldCoords.z, terrainTransform) + terrainTransform.getTranslation(tmp).y;
         return terrainHeight > worldCoords.y;
     }
 
-    public boolean isOnTerrain(float worldX, float worldZ) {
-        transform.getTranslation(c00);
-        return worldX >= c00.x && worldX <= c00.x + terrainWidth && worldZ >= c00.z && worldZ <= c00.z + terrainDepth;
+    /**
+     * Determines if the world coordinates are within the terrains X and Z boundaries, does not including height
+     * @param worldX worldX to check
+     * @param worldZ worldZ to check
+     * @param terrainTransform the world transform (modelInstance transform) of the terrain
+     * @return boolean true if within the terrains boundary, else false
+     */
+    public boolean isOnTerrain(float worldX, float worldZ, Matrix4 terrainTransform) {
+        // Translates world coordinates to local coordinates
+        tmp.set(worldX, 0f, worldZ).mul(tmpMatrix.set(terrainTransform).inv());
+        return 0 <= tmp.x && tmp.x <= terrainWidth && 0 <= tmp.z && tmp.z <= terrainDepth;
     }
 
-    public Vector3 getPosition(Vector3 out) {
-        transform.getTranslation(out);
-        return out;
+    public TerrainMaterial getTerrainTexture() {
+        return terrainMaterial;
     }
 
-    public TerrainTexture getTerrainTexture() {
-        return terrainTexture;
-    }
+    public void setTerrainTexture(TerrainMaterial terrainMaterial) {
+        if (terrainMaterial == null) return;
 
-    public void setTerrainTexture(TerrainTexture terrainTexture) {
-        if (terrainTexture == null) return;
+        terrainMaterial.setTerrain(this);
+        this.terrainMaterial = terrainMaterial;
 
-        terrainTexture.setTerrain(this);
-        this.terrainTexture = terrainTexture;
-
-        material.set(new TerrainTextureAttribute(TerrainTextureAttribute.ATTRIBUTE_SPLAT0, this.terrainTexture));
+        material.set(TerrainMaterialAttribute.createTerrainMaterialAttribute(terrainMaterial));
     }
 
     public float[] getVertices() {
@@ -373,19 +515,19 @@ public class Terrain implements RenderableProvider, Disposable {
             }
         }
         // Get tangents added to terrains vertices array for normal mapping
-        MeshTangentSpaceGenerator.computeTangentSpace(vertices, buildIndices(), attribs, false, true, normalMapUVs);
+        MeshTangentSpaceGenerator.computeTangentSpace(vertices, indices, attribs, false, true, normalMapUVs);
 
         mesh.setVertices(vertices);
     }
 
-    @Override
-    public void getRenderables(Array<Renderable> renderables, Pool<Renderable> pool) {
-        modelInstance.getRenderables(renderables, pool);
+    public Model getModel() {
+        return model;
     }
 
     @Override
     public void dispose() {
-
+        model.dispose();
+        mesh.dispose();
     }
 
 }

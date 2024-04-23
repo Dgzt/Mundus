@@ -18,6 +18,7 @@ package com.mbrlabs.mundus.runtime.converter;
 
 import com.mbrlabs.mundus.commons.assets.AssetManager;
 import com.mbrlabs.mundus.commons.dto.GameObjectDTO;
+import com.mbrlabs.mundus.commons.mapper.CustomPropertiesComponentConverter;
 import com.mbrlabs.mundus.commons.scene3d.GameObject;
 import com.mbrlabs.mundus.commons.scene3d.SceneGraph;
 import com.mbrlabs.mundus.runtime.Shaders;
@@ -49,11 +50,11 @@ public class GameObjectConverter {
 
         // convert components
         if (dto.getModelComponent() != null) {
-            go.getComponents().add(ModelComponentConverter.convert(dto.getModelComponent(), go, shaders, assetManager));
+            go.getComponents().add(ModelComponentConverter.convert(dto.getModelComponent(), go, assetManager));
         } else if (dto.getTerrainComponent() != null) {
-            go.getComponents().add(TerrainComponentConverter.convert(dto.getTerrainComponent(), go, shaders, assetManager));
+            go.getComponents().add(TerrainComponentConverter.convert(dto.getTerrainComponent(), go, assetManager));
         } else if (dto.getWaterComponent() != null) {
-            go.getComponents().add(WaterComponentConverter.convert(dto.getWaterComponent(), go, shaders.getWaterShader(), assetManager));
+            go.getComponents().add(WaterComponentConverter.convert(dto.getWaterComponent(), go, shaders, assetManager));
             go.hasWaterComponent = true;
         }
 
@@ -64,6 +65,10 @@ public class GameObjectConverter {
 
         if (dto.getLightComponent() != null) {
             go.getComponents().add(LightComponentConverter.convert(dto.getLightComponent(), go));
+        }
+
+        if (dto.getCustomPropertiesComponent() != null) {
+            go.getComponents().add(CustomPropertiesComponentConverter.convert(dto.getCustomPropertiesComponent(), go));
         }
 
         // recursively convert children

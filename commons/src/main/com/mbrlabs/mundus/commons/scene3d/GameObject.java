@@ -16,10 +16,8 @@
 
 package com.mbrlabs.mundus.commons.scene3d;
 
-import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
-import com.mbrlabs.mundus.commons.scene3d.components.ClippableComponent;
 import com.mbrlabs.mundus.commons.scene3d.components.Component;
 import com.mbrlabs.mundus.commons.scene3d.components.LightComponent;
 import com.mbrlabs.mundus.commons.scene3d.components.WaterComponent;
@@ -94,67 +92,6 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
     }
 
     /**
-     * Calls the render() method for each component in this and all child nodes.
-     *
-     * @param delta
-     *            time since last render
-     */
-    public void render(float delta) {
-        if (active) {
-            for (Component component : this.components) {
-                component.render(delta);
-            }
-
-            if (getChildren() != null) {
-                for (GameObject node : getChildren()) {
-                    node.render(delta);
-                }
-            }
-        }
-    }
-
-    public void render(float delta, Vector3 clippingPlane, float clipHeight) {
-        if (!active) return;
-
-        for (Component component : this.components) {
-            if (component instanceof ClippableComponent)
-                ((ClippableComponent)component).render(delta, clippingPlane, clipHeight);
-            else
-                component.render(delta);
-        }
-
-        if (getChildren() != null) {
-            for (GameObject node : getChildren()) {
-                node.render(delta, clippingPlane, clipHeight);
-            }
-        }
-    }
-
-    /**
-     * Renders depth, right now only renders depth for clippable components as it
-     * is used for calculating depths of water for refractions.
-     * @param delta delta time
-     * @param clippingPlane the clipping plane to use
-     * @param clipHeight clipping height for the clipping plane
-     * @param shader
-     */
-    public void renderDepth(float delta, Vector3 clippingPlane, float clipHeight, Shader shader) {
-        if (active) {
-            for (Component component : this.components) {
-                if (component instanceof ClippableComponent) {
-                    ((ClippableComponent) component).renderDepth(delta, clippingPlane, clipHeight, shader);
-                }
-            }
-
-            if (getChildren() != null) {
-                for (GameObject node : getChildren()) {
-                    node.renderDepth(delta, clippingPlane, clipHeight, shader);
-                }
-            }
-        }
-    }
-
-    /**
      * Calls the update() method for each component in this and all child nodes.
      *
      * @param delta
@@ -207,24 +144,12 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
      *            output array
      * @param type
      *            component type
-     * @param includeChilds
-     *            search in node children of this game object as well?
+     * @param recursive
+     *            recursive search?
      * @return components found
      */
-    public Array<Component> findComponentsByType(Array<Component> out, Component.Type type, boolean includeChilds) {
-        if (includeChilds) {
-            for (GameObject go : this) {
-                for (Component c : go.components) {
-                    if (c.getType() == type) out.add(c);
-                }
-            }
-        } else {
-            for (Component c : components) {
-                if (c.getType() == type) out.add(c);
-            }
-        }
-
-        return out;
+    public <T extends Component> Array<T> findComponentsByType(Array<T> out, Component.Type type, boolean recursive) {
+        return findComponentsByType(out, this, type, recursive);
     }
 
     /**
@@ -234,11 +159,12 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
      *            component type
      * @return component if found or null
      */
-    public Component findComponentByType(Component.Type type) {
-        for (Component c : components) {
-            if (c != null && c.getType() == type) return c;
+    public <T extends Component> T findComponentByType(Component.Type type) {
+        // Use regular loop, to not conflict with nested iterators
+        for (int i = 0; i < components.size; i++) {
+            Component c = components.get(i);
+            if (c != null && c.getType() == type) return (T) c;
         }
-
         return null;
     }
 
@@ -300,11 +226,79 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
         }
     }
 
+    /**
+     * Returns the first child GameObject matching the name.
+     *
+     * @param name the GameObject name to search for
+     * @return the first GameObject found or null if not found
+     */
+    public GameObject findChildByName(String name) {
+        for (GameObject go : this) {
+            if (go.name.equals(name)) {
+                return go;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns an Array of all child GameObjects matching the name.
+     *
+     * @param name the GameObject name to search for
+     * @return Array of all matching GameObjects
+     */
+    public Array<GameObject> findChildrenByName(String name) {
+        Array<GameObject> objects = new Array<>();
+        for (GameObject go : this) {
+            if (go.name.equals(name)) {
+                objects.add(go);
+            }
+        }
+
+        return objects;
+    }
+
+    /**
+     * Returns an Array of all child GameObjects that have the given Component.Type
+     *
+     * @param type the Component Type to search for
+     * @return Array of all matching GameObjects
+     */
+    public Array<GameObject> findChildrenByComponent(Component.Type type) {
+        Array<GameObject> objects = new Array<>();
+        for (GameObject go : this) {
+            Component component = go.findComponentByType(type);
+            if (component != null) {
+                objects.add(go);
+            }
+        }
+
+        return objects;
+    }
+
+    /**
+     * Returns an Array of all child GameObjects that have the given Tag
+     *
+     * @param tag the string tag to search for
+     * @return Array of all matching GameObjects
+     */
+    public Array<GameObject> findChildrenByTag(String tag) {
+        Array<GameObject> objects = new Array<>();
+        for (GameObject go : this) {
+            if (go.tags != null && go.tags.contains(tag, false)) {
+                objects.add(go);
+            }
+        }
+
+        return objects;
+    }
+
     @Override
     public void addChild(GameObject child) {
         super.addChild(child);
 
-        LightComponent component = (LightComponent) child.findComponentByType(Component.Type.LIGHT);
+        LightComponent component = child.findComponentByType(Component.Type.LIGHT);
 
         // On adding of GameObject with a Light, add it to environment
         if (component != null) {
@@ -316,7 +310,7 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
     public void remove() {
         super.remove();
 
-        LightComponent component = (LightComponent) findComponentByType(Component.Type.LIGHT);
+        LightComponent component = findComponentByType(Component.Type.LIGHT);
 
         // On removal of GameObject, remove its light component from environment
         if (component != null) {
@@ -329,18 +323,21 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
         super.setLocalScale(x, y, z);
         // We track when the scale has changed, for recalculating bounds for things like frustum culling
         scaleChanged = true;
+        updateChildrenScaleChanged(this);
     }
 
     @Override
     public void scale(Vector3 v) {
         super.scale(v);
         scaleChanged = true;
+        updateChildrenScaleChanged(this);
     }
 
     @Override
     public void scale(float x, float y, float z) {
         super.scale(x,y,z);
         scaleChanged = true;
+        updateChildrenScaleChanged(this);
     }
 
     @Override
@@ -371,6 +368,31 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
     @Override
     public String toString() {
         return name;
+    }
+
+    private void updateChildrenScaleChanged(GameObject go) {
+        if (go.getChildren() == null) return;
+        // Update all children recursively
+        for (GameObject child : go.getChildren()) {
+            child.scaleChanged = true;
+            updateChildrenScaleChanged(child);
+        }
+    }
+
+    private <T extends Component> Array<T> findComponentsByType(Array<T> out, GameObject go, Component.Type type, boolean recursive) {
+        for (int i = 0; i < go.components.size; ++i) {
+            Component c = go.components.get(i);
+            if (c.getType() == type) out.add((T)c);
+        }
+
+        if (recursive && go.children != null) {
+            for (int i = 0; i < go.children.size; ++i) {
+                GameObject child = go.children.get(i);
+                findComponentsByType(out, child, type, true);
+            }
+        }
+
+        return out;
     }
 
 }

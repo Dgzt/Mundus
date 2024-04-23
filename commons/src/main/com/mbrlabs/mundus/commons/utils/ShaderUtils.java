@@ -18,7 +18,9 @@ package com.mbrlabs.mundus.commons.utils;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
@@ -33,7 +35,42 @@ import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider;
  */
 public class ShaderUtils {
 
-    protected static final String LIGHT_SHADER_PREFIX = "com/mbrlabs/mundus/commons/shaders/light.glsl";
+    /**
+     * Compiles and links shader.
+     *
+     * @param vertexShader
+     *            path to vertex shader
+     * @param fragmentShader
+     *            path to fragment shader
+     * @param shader
+     *            the shader to compile a program for
+     * @param customPrefix
+     *             a custom prefix string to prepend to vertex and fragment shaders
+     *
+     * @return compiled shader program
+     */
+    public static ShaderProgram compile(String vertexShader, String fragmentShader, Shader shader, String customPrefix) {
+        FileHandle vertFile;
+        FileHandle fragFile;
+
+        if (Gdx.app.getType() == Application.ApplicationType.WebGL) {
+            vertFile = Gdx.files.internal(vertexShader);
+            fragFile = Gdx.files.internal(fragmentShader);
+        } else {
+            vertFile = Gdx.files.classpath(vertexShader);
+            fragFile = Gdx.files.classpath(fragmentShader);
+        }
+
+        String vert = ShaderPreprocessor.readShaderFile(vertFile);
+        String frag = ShaderPreprocessor.readShaderFile(fragFile);
+
+        ShaderProgram program = new ShaderProgram(customPrefix + vert, customPrefix + getShaderPrefix(shader) + frag);
+        if (!program.isCompiled()) {
+            throw new GdxRuntimeException(program.getLog());
+        }
+
+        return program;
+    }
 
     /**
      * Compiles and links shader.
@@ -48,23 +85,7 @@ public class ShaderUtils {
      * @return compiled shader program
      */
     public static ShaderProgram compile(String vertexShader, String fragmentShader, Shader shader) {
-        String vert;
-        String frag;
-
-        if (Gdx.app.getType() == Application.ApplicationType.WebGL) {
-            vert = Gdx.files.internal(vertexShader).readString();
-            frag = Gdx.files.internal(fragmentShader).readString();
-        } else {
-            vert = Gdx.files.classpath(vertexShader).readString();
-            frag = Gdx.files.classpath(fragmentShader).readString();
-        }
-
-        ShaderProgram program = new ShaderProgram(vert, getShaderPrefix(shader) + frag);
-        if (!program.isCompiled()) {
-            throw new GdxRuntimeException(program.getLog());
-        }
-
-        return program;
+        return compile(vertexShader, fragmentShader, shader, "");
     }
 
     public static String getShaderPrefix(Shader shader) {
@@ -73,12 +94,6 @@ public class ShaderUtils {
         if (shader instanceof LightShader) {
             fragPrefix += "#define numPointLights " + LightUtils.MAX_POINT_LIGHTS + "\n";
             fragPrefix += "#define numSpotLights " + LightUtils.MAX_SPOT_LIGHTS + "\n";
-
-            if (Gdx.app.getType() == Application.ApplicationType.WebGL) {
-                fragPrefix += Gdx.files.internal(LIGHT_SHADER_PREFIX).readString();
-            } else {
-                fragPrefix +=  Gdx.files.classpath(LIGHT_SHADER_PREFIX).readString();
-            }
         }
 
         return fragPrefix;
@@ -96,6 +111,8 @@ public class ShaderUtils {
         config.numPointLights = LightUtils.MAX_POINT_LIGHTS;
         config.numSpotLights = LightUtils.MAX_SPOT_LIGHTS;
         config.numBones = numBones;
+        config.manualGammaCorrection = true;
+        config.manualSRGB = PBRShaderConfig.SRGB.ACCURATE;
         config.defaultCullFace = GL20.GL_BACK;
         config.vertexShader = Gdx.files.classpath("com/mbrlabs/mundus/commons/shaders/custom-gdx-pbr.vs.glsl").readString();
         config.fragmentShader = Gdx.files.classpath("com/mbrlabs/mundus/commons/shaders/custom-gdx-pbr.fs.glsl").readString();
@@ -113,6 +130,39 @@ public class ShaderUtils {
         depthConfig.numBones = numBones;
         depthConfig.defaultCullFace = GL20.GL_BACK;
         return depthConfig;
+    }
+
+    /**
+     * Originally from gdx-gltf library
+     * Returns the GLSL version string for the current platform. Use this
+     * in shader prefixes (first line) to define the GLSL version when using GL30 features
+     * @return GLSL version string
+     */
+    public static String getGLVersionString() {
+        String version = "";
+        if (GLUtils.isGL3()) {
+            if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                version = "#version 130\n" + "#define GLSL3\n";
+            } else if (Gdx.app.getType() == Application.ApplicationType.Android ||
+                    Gdx.app.getType() == Application.ApplicationType.iOS ||
+                    Gdx.app.getType() == Application.ApplicationType.WebGL) {
+                version = "#version 300 es\n" + "#define GLSL3\n";
+            }
+        }
+        return version;
+    }
+
+    /**
+     * Combine the environment and material of the renderable to create a bitmask.
+     *
+     * @param renderable renderable to combine masks for
+     * @return mask of environment and material
+     */
+    public static long combineAttributeMasks(final Renderable renderable) {
+        long mask = 0;
+        if (renderable.environment != null) mask |= renderable.environment.getMask();
+        if (renderable.material != null) mask |= renderable.material.getMask();
+        return mask;
     }
 
 }

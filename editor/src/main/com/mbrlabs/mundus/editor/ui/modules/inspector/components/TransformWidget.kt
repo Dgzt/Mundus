@@ -19,10 +19,12 @@ package com.mbrlabs.mundus.editor.ui.modules.inspector.components
 import com.badlogic.gdx.math.Quaternion
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Actor
+import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.mbrlabs.mundus.commons.scene3d.GameObject
 import com.mbrlabs.mundus.commons.scene3d.components.Component
+import com.mbrlabs.mundus.commons.scene3d.components.WaterComponent
 import com.mbrlabs.mundus.editor.Mundus
 import com.mbrlabs.mundus.editor.core.project.ProjectManager
 import com.mbrlabs.mundus.editor.history.CommandHistory
@@ -64,6 +66,16 @@ class TransformWidget : BaseInspectorWidget("Transformation") {
         isDeletable = false
         setupUI()
         setupListeners()
+    }
+
+    override fun act(delta: Float) {
+        super.act(delta)
+
+        // If this widget is visible and the currentSelection variable is null (for example a brush tool selected) then
+        // disable this widget
+        val projectContext = projectManager.current()
+        val touchable = if (projectContext.currScene.currentSelection != null) Touchable.enabled else Touchable.disabled
+        this.touchable = touchable
     }
 
     private fun setupUI() {
@@ -111,7 +123,7 @@ class TransformWidget : BaseInspectorWidget("Transformation") {
                 history.add(command)
 
                 // If a water component height is changed, global water height needs to update
-                if (go.findComponentByType(Component.Type.WATER) != null)
+                if (go.findComponentByType<WaterComponent?>(Component.Type.WATER) != null)
                     projectManager.current().currScene.settings.waterHeight = go.getPosition(Vector3()).y
             }
         })
@@ -136,8 +148,7 @@ class TransformWidget : BaseInspectorWidget("Transformation") {
                 val rot = go.getLocalRotation(tempQuat)
                 val rotateCommand = RotateCommand(go)
                 rotateCommand.setBefore(rot)
-                rot.setEulerAngles(rot.yaw, rotX.float, rot.roll)
-                go.setLocalRotation(rot.x, rot.y, rot.z, rot.w)
+                go.setLocalRotation(rot.yaw, rotX.float, rot.roll)
                 rotateCommand.setAfter(go.getLocalRotation(tempQuat))
                 history.add(rotateCommand)
             }
@@ -149,8 +160,7 @@ class TransformWidget : BaseInspectorWidget("Transformation") {
                 val rot = go.getLocalRotation(tempQuat)
                 val rotateCommand = RotateCommand(go)
                 rotateCommand.setBefore(rot)
-                rot.setEulerAngles(rotY.float, rot.pitch, rot.roll)
-                go.setLocalRotation(rot.x, rot.y, rot.z, rot.w)
+                go.setLocalRotation(rotY.float, rot.pitch, rot.roll)
                 rotateCommand.setAfter(go.getLocalRotation(tempQuat))
                 history.add(rotateCommand)
             }
@@ -162,8 +172,7 @@ class TransformWidget : BaseInspectorWidget("Transformation") {
                 val rot = go.getLocalRotation(tempQuat)
                 val rotateCommand = RotateCommand(go)
                 rotateCommand.setBefore(rot)
-                rot.setEulerAngles(rot.yaw, rot.pitch, rotZ.float)
-                go.setLocalRotation(rot.x, rot.y, rot.z, rot.w)
+                go.setLocalRotation(rot.yaw, rot.pitch, rotZ.float)
                 rotateCommand.setAfter(go.getLocalRotation(tempQuat))
                 history.add(rotateCommand)
             }

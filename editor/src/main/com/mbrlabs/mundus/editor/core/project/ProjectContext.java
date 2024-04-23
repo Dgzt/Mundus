@@ -50,8 +50,6 @@ public class ProjectContext implements Disposable {
 
     public EditorAssetManager assetManager;
     public MundusPreferencesManager projectPref;
-
-    public boolean renderDebug = false;
     public boolean renderWireframe = false;
 
     private int idProvider;

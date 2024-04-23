@@ -19,27 +19,23 @@ package com.mbrlabs.mundus.editor.ui.widgets
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.scenes.scene2d.Actor
-import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Array
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSelectBox
 import com.kotcrab.vis.ui.widget.VisTable
-import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.color.ColorPickerAdapter
+import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
+import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.mbrlabs.mundus.commons.assets.Asset
 import com.mbrlabs.mundus.commons.assets.MaterialAsset
 import com.mbrlabs.mundus.commons.assets.TexCoordInfo
 import com.mbrlabs.mundus.commons.assets.TextureAsset
 import com.mbrlabs.mundus.commons.utils.ModelUtils
 import com.mbrlabs.mundus.editor.Mundus
-import com.mbrlabs.mundus.editor.assets.AssetMaterialFilter
 import com.mbrlabs.mundus.editor.assets.AssetTextureFilter
 import com.mbrlabs.mundus.editor.core.project.ProjectManager
-import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.editor.ui.modules.dialogs.assets.AssetPickerDialog
 import com.mbrlabs.mundus.editor.utils.Colors
 
@@ -52,10 +48,6 @@ import com.mbrlabs.mundus.editor.utils.Colors
  * @version 13-10-2016
  */
 class MaterialWidget : VisTable() {
-
-    private val matFilter: AssetMaterialFilter = AssetMaterialFilter()
-    private val matChangedBtn: VisTextButton = VisTextButton("change")
-    private val matPickerListener: AssetPickerDialog.AssetPickerListener
 
     private val matNameLabel: VisLabel = VisLabel()
     private val diffuseColorField: ColorPickerField = ColorPickerField()
@@ -75,10 +67,10 @@ class MaterialWidget : VisTable() {
 
     private val scaleUField = FloatFieldWithLabel("Scale U", -1, false)
     private val scaleVField = FloatFieldWithLabel("Scale V", -1, false)
-
+    //slider moves in 11.25 degree steps
+    private val rotateUVField = Spinner("", SimpleFloatSpinnerModel(0f,0f, (Math.PI * 2f).toFloat(), (Math.PI / 16f).toFloat(), 8))
     private val offsetUField = ImprovedSlider(0.0f, 1.0f, 0.01f)
     private val offsetVField = ImprovedSlider(0.0f, 1.0f, 0.01f)
-    private val rotateUVField = ImprovedSlider(0.0f, 6.3f, 0.01f)
 
     private val cullFaceSelectBox: VisSelectBox<CullFace> = VisSelectBox()
 
@@ -106,42 +98,29 @@ class MaterialWidget : VisTable() {
                 normalScaleField.value = value.normalScale
                 shadowBiasField.value = value.shadowBias
 
+                // Store current cull value first, before we set the items, otherwise
+                // the listener can override it.
+                val currentValue = CullFace.getFromValue(value.cullFace)
+
                 val cullValues = Array<CullFace>()
                 for (cullValue in CullFace.values())
                     cullValues.add(cullValue)
                 cullFaceSelectBox.items = cullValues
-
-                cullFaceSelectBox.selected = CullFace.getFromValue(value.cullFace)
+                cullFaceSelectBox.selected = currentValue
 
                 scaleUField.textField.text = value.diffuseTexCoord.scaleU.toString()
                 scaleVField.textField.text = value.diffuseTexCoord.scaleV.toString()
+
                 offsetUField.value = value.diffuseTexCoord.offsetU
                 offsetVField.value = value.diffuseTexCoord.offsetV
-                rotateUVField.value = value.diffuseTexCoord.rotationUV
+                val spinnerModel = rotateUVField.model as SimpleFloatSpinnerModel
+                spinnerModel.value = value.diffuseTexCoord.rotationUV
             }
-        }
-
-    /**
-     * An optional listener for changing the material. If the property is null
-     * the user will not be able to change the material.
-     */
-    var matChangedListener: MaterialChangedListener? = null
-        set(value) {
-            field = value
-            matChangedBtn.touchable = if(value == null) Touchable.disabled else Touchable.enabled
         }
 
     init {
         align(Align.topLeft)
-        matNameLabel.setWrap(true)
-
-        matPickerListener = object: AssetPickerDialog.AssetPickerListener {
-            override fun onSelected(asset: Asset?) {
-                material = asset as? MaterialAsset
-                matChangedListener?.materialChanged(material!!)
-            }
-        }
-
+        matNameLabel.wrap = true
     }
 
     fun setupWidgets() {
@@ -149,7 +128,6 @@ class MaterialWidget : VisTable() {
         val table = VisTable()
         table.add(matNameLabel).grow()
         matNameLabel.color = Colors.TEAL
-        table.add<VisTextButton>(matChangedBtn).padLeft(4f).right().row()
         add(table).grow().row()
 
         addSeparator().padTop(15f).padBottom(15f).growX().row()
@@ -159,6 +137,8 @@ class MaterialWidget : VisTable() {
         add(VisLabel("Emissive color")).grow().row()
         add(emissiveColorField).growX().row()
 
+        addSeparator().padTop(15f).padBottom(15f).growX().row()
+        add(VisLabel("Material Textures are not used by Terrains")).grow().row()
         add(VisLabel("Diffuse texture")).grow().row()
         add(diffuseAssetField).growX().row()
 
@@ -218,24 +198,18 @@ class MaterialWidget : VisTable() {
         val texTable = VisTable()
         texTable.defaults().padBottom(10f)
 
-        texTable.add(VisLabel("Offset U")).growX()
+        texTable.add(VisLabel("Offset U")).padRight(10f)
         texTable.add(offsetUField).growX().row()
-        texTable.add(VisLabel("Offset V")).growX()
+        texTable.add(VisLabel("Offset V")).padRight(10f)
         texTable.add(offsetVField).growX().row()
-        texTable.add(VisLabel("Rotate UV")).growX()
-        texTable.add(rotateUVField).growX().row()
 
+        rotateUVField.model.isWrap = true
+        texTable.add(ToolTipLabel("UV Rotation", "The angle in radians that the UV Texture has been rotated.")).padRight(10f)
+        texTable.add(rotateUVField).growX().row()
         add(texTable).growX().row()
 
         add(scaleUField).growX().row()
         add(scaleVField).growX().row()
-
-
-        matChangedBtn.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                UI.assetSelectionDialog.show(false, matFilter, matPickerListener)
-            }
-        })
 
         // diffuse texture
         diffuseAssetField.assetFilter = AssetTextureFilter()
@@ -417,7 +391,8 @@ class MaterialWidget : VisTable() {
         diffuseTexCoord?.scaleV = scaleVField.float
         diffuseTexCoord?.offsetU = offsetUField.value
         diffuseTexCoord?.offsetV = offsetVField.value
-        diffuseTexCoord?.rotationUV = rotateUVField.value
+        val spinnerModel = rotateUVField.model as SimpleFloatSpinnerModel
+        diffuseTexCoord?.rotationUV = spinnerModel.value
     }
 
     // TODO find better solution than iterating through all components

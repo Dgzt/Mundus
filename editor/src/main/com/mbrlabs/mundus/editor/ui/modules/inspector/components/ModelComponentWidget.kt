@@ -25,6 +25,7 @@ import com.mbrlabs.mundus.commons.assets.MaterialAsset
 import com.mbrlabs.mundus.commons.scene3d.GameObject
 import com.mbrlabs.mundus.commons.scene3d.components.Component
 import com.mbrlabs.mundus.commons.scene3d.components.ModelComponent
+import com.mbrlabs.mundus.editor.ui.widgets.MaterialSelectWidget
 import com.mbrlabs.mundus.editor.ui.widgets.MaterialWidget
 import com.mbrlabs.mundus.editor.ui.widgets.ToolTipLabel
 
@@ -82,27 +83,22 @@ class ModelComponentWidget(modelComponent: ModelComponent) : ComponentWidget<Mod
         materialContainer.clear()
         for (g3dbMatID in component.materials.keys()) {
 
-            val mw = MaterialWidget()
-            mw.matChangedListener = object: MaterialWidget.MaterialChangedListener {
+            val material = component.materials[g3dbMatID]
+            val selectWidget = MaterialSelectWidget(material)
+            materialContainer.add(selectWidget).grow().padBottom(20f).row()
+            selectWidget.matChangedListener = object: MaterialWidget.MaterialChangedListener {
                 override fun materialChanged(materialAsset: MaterialAsset) {
                     component.materials.put(g3dbMatID, materialAsset)
                     component.applyMaterials()
                 }
             }
-
-            mw.material = component.materials[g3dbMatID]
-            materialContainer.add(mw).grow().padBottom(20f).row()
-
-            // Calling this here to setup listeners
-            // prevents iteration within iteration issues
-            mw.setupWidgets()
         }
     }
 
     override fun setValues(go: GameObject) {
-        val c = go.findComponentByType(Component.Type.MODEL)
+        val c: ModelComponent? = go.findComponentByType(Component.Type.MODEL)
         if (c != null) {
-            component = c as ModelComponent
+            component = c
         }
     }
 

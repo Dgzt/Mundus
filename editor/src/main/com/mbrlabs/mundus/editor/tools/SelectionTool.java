@@ -15,18 +15,20 @@
  */
 package com.mbrlabs.mundus.editor.tools;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.mbrlabs.mundus.commons.scene3d.GameObject;
 import com.mbrlabs.mundus.commons.scene3d.components.Component;
 import com.mbrlabs.mundus.commons.scene3d.components.ModelComponent;
 import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent;
 import com.mbrlabs.mundus.commons.scene3d.components.WaterComponent;
+import com.mbrlabs.mundus.commons.utils.DebugRenderer;
 import com.mbrlabs.mundus.editor.Mundus;
 import com.mbrlabs.mundus.editor.core.project.ProjectManager;
 import com.mbrlabs.mundus.editor.events.GameObjectSelectedEvent;
 import com.mbrlabs.mundus.editor.history.CommandHistory;
+import com.mbrlabs.mundus.editor.preferences.MundusPreferencesManager;
 import com.mbrlabs.mundus.editor.tools.picker.GameObjectPicker;
 import com.mbrlabs.mundus.editor.utils.Fa;
 
@@ -38,16 +40,21 @@ public class SelectionTool extends Tool {
 
     public static final String NAME = "Selection Tool";
 
-    private GameObjectPicker goPicker;
+    private final GameObjectPicker goPicker;
+    private final MundusPreferencesManager globalPreferencesManager;
 
-    public SelectionTool(ProjectManager projectManager, GameObjectPicker goPicker,
-            CommandHistory history) {
+    public SelectionTool(final ProjectManager projectManager,
+                         final GameObjectPicker goPicker,
+                         final CommandHistory history,
+                         final MundusPreferencesManager globalPreferencesManager) {
         super(projectManager, history);
         this.goPicker = goPicker;
+        this.globalPreferencesManager = globalPreferencesManager;
     }
 
     public void gameObjectSelected(GameObject selection) {
         getProjectManager().current().currScene.currentSelection = selection;
+        DebugRenderer.setSelectedGameObject(selection);
     }
 
     @Override
@@ -68,27 +75,29 @@ public class SelectionTool extends Tool {
     @Override
     public void render() {
         if (getProjectManager().current().currScene.currentSelection != null) {
+            Gdx.gl.glLineWidth(globalPreferencesManager.getFloat(MundusPreferencesManager.GLOB_LINE_WIDTH_SELECTION, MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE));
             getProjectManager().getModelBatch().begin(getProjectManager().current().currScene.cam);
             for (GameObject go : getProjectManager().current().currScene.currentSelection) {
                 // model component
-                ModelComponent mc = (ModelComponent) go.findComponentByType(Component.Type.MODEL);
+                ModelComponent mc = go.findComponentByType(Component.Type.MODEL);
                 if (mc != null) {
                     getProjectManager().getModelBatch().render(mc.getModelInstance(), getShader());
                 }
 
                 // terrainAsset component
-                TerrainComponent tc = (TerrainComponent) go.findComponentByType(Component.Type.TERRAIN);
+                TerrainComponent tc = go.findComponentByType(Component.Type.TERRAIN);
                 if (tc != null) {
-                    getProjectManager().getModelBatch().render(tc.getTerrain().getTerrain(), getShader());
+                    getProjectManager().getModelBatch().render(tc.getModelInstance(), getShader());
                 }
 
-                // terrainAsset component
-                WaterComponent wc = (WaterComponent) go.findComponentByType(Component.Type.WATER);
+                // waterAsset component
+                WaterComponent wc = go.findComponentByType(Component.Type.WATER);
                 if (wc != null) {
                     getProjectManager().getModelBatch().render(wc.getWaterAsset().water, getShader());
                 }
             }
             getProjectManager().getModelBatch().end();
+            Gdx.gl.glLineWidth(MundusPreferencesManager.GLOB_LINE_WIDTH_DEFAULT_VALUE);
         }
     }
 
@@ -99,7 +108,7 @@ public class SelectionTool extends Tool {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if (button == Input.Buttons.RIGHT) {
+        if (button == getSelectButtonId()) {
             GameObject selection = goPicker.pick(getProjectManager().current().currScene, screenX, screenY);
             if (selection != null && !selection.equals(getProjectManager().current().currScene.currentSelection)) {
                 gameObjectSelected(selection);
@@ -133,6 +142,14 @@ public class SelectionTool extends Tool {
     @Override
     public void onDisabled() {
         getProjectManager().current().currScene.currentSelection = null;
+    }
+
+    protected boolean isSelectWithRightButton() {
+        return globalPreferencesManager.getBoolean(MundusPreferencesManager.GLOB_RIGHT_BUTTON_SELECT, MundusPreferencesManager.GLOB_RIGHT_SELECT_BUTTON_DEFAULT_VALUE);
+    }
+
+    private int getSelectButtonId() {
+        return isSelectWithRightButton() ? Input.Buttons.RIGHT : Input.Buttons.LEFT;
     }
 
 }

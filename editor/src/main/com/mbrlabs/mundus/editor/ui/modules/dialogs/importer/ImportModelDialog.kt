@@ -41,9 +41,9 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.mbrlabs.mundus.commons.assets.ModelAsset
 import com.mbrlabs.mundus.commons.assets.meta.MetaModel
-import com.mbrlabs.mundus.commons.env.lights.DirectionalLight
 import com.mbrlabs.mundus.commons.g3d.MG3dModelLoader
 import com.mbrlabs.mundus.commons.shaders.MundusPBRShaderProvider
+import com.mbrlabs.mundus.commons.utils.LightUtils
 import com.mbrlabs.mundus.commons.utils.ModelUtils
 import com.mbrlabs.mundus.commons.utils.ShaderUtils
 import com.mbrlabs.mundus.editor.Mundus
@@ -77,6 +77,7 @@ import net.mgsx.gltf.scene3d.shaders.PBRShaderConfig
 import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider
 import net.mgsx.gltf.scene3d.utils.IBLBuilder
 import java.io.IOException
+import java.nio.file.Paths
 
 /**
  * @author Marcus Brummer
@@ -106,6 +107,12 @@ class ImportModelDialog : BaseDialog("Import Mesh"), Disposable {
 
     override fun dispose() {
         importMeshTable.dispose()
+    }
+
+    override fun close() {
+        importMeshTable.deleteTempModel()
+        importMeshTable.resetDialog()
+        super.close()
     }
 
     /**
@@ -143,8 +150,8 @@ class ImportModelDialog : BaseDialog("Import Mesh"), Disposable {
             env = Environment()
 
             val directionalLightEx = DirectionalLightEx()
-            directionalLightEx.intensity = DirectionalLight.DEFAULT_INTENSITY
-            directionalLightEx.setColor(DirectionalLight.DEFAULT_COLOR)
+            directionalLightEx.intensity = LightUtils.DEFAULT_INTENSITY
+            directionalLightEx.setColor(LightUtils.DEFAULT_COLOR)
             directionalLightEx.direction.set(-1f, -0.8f, -0.2f)
 
             val iblBuilder = IBLBuilder.createOutdoor(directionalLightEx)
@@ -194,9 +201,9 @@ class ImportModelDialog : BaseDialog("Import Mesh"), Disposable {
             inputTable.left().top()
 
             val label = VisLabel()
-            label.setText("The recommended format is '.gltf'. Mundus relies on textures being external image files," +
-                    " so using binary files like .glb where the files are compressed and packed into the binary is " +
-                    "not recommended. Automatic importing of material attributes only works with .gltf files currently.")
+            label.setText("The recommended format is '.gltf' separate (bin file, gltf file, textures). Mundus relies on textures being external image files," +
+                    " so using binary files like .glb or embedded .gltf where the files are compressed and packed into the binary is " +
+                    "not recommended. Automatic importing of material attributes only works with separate .gltf files currently.")
             label.wrap = true
             label.width = 300f
             inputTable.add(label).expandX().prefWidth(300f).padBottom(10f).row()
@@ -353,6 +360,29 @@ class ImportModelDialog : BaseDialog("Import Mesh"), Disposable {
                 previewInstance = null
             }
             modelBatch?.dispose()
+            modelInput.clear()
+        }
+
+        fun deleteTempModel() {
+            if (importedModel == null) return
+
+            val parentDirectory = importedModel?.file?.parent()
+            val isDir = parentDirectory?.isDirectory
+            if (isDir == true) {
+                val path = Paths.get("mundus", "temp")
+                val tempModelDirPath = parentDirectory.file().absolutePath
+                // A defensive check, just to make sure the directory we are deleting is in the temp directory
+                if (tempModelDirPath.contains(path.toString())) {
+                    parentDirectory.deleteDirectory()
+                    Mundus.postEvent(LogEvent("Deleted temporary model directory at $tempModelDirPath"))
+                }
+            }
+
+            importedModel = null
+        }
+
+        fun resetDialog() {
+            previewInstance = null
             modelInput.clear()
         }
     }

@@ -17,14 +17,15 @@
 package com.mbrlabs.mundus.commons.scene3d.components;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g3d.RenderableProvider;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.mbrlabs.mundus.commons.assets.Asset;
 import com.mbrlabs.mundus.commons.assets.WaterAsset;
 import com.mbrlabs.mundus.commons.scene3d.GameObject;
-import com.mbrlabs.mundus.commons.water.WaterFloatAttribute;
+import com.mbrlabs.mundus.commons.water.attributes.WaterFloatAttribute;
 
-public class WaterComponent extends CullableComponent implements AssetUsage {
+public class WaterComponent extends CullableComponent implements AssetUsage, RenderableComponent {
 
     protected WaterAsset waterAsset;
     protected Shader shader;
@@ -35,6 +36,11 @@ public class WaterComponent extends CullableComponent implements AssetUsage {
         super(go);
         this.shader = shader;
         type = Component.Type.WATER;
+    }
+
+    @Override
+    public RenderableProvider getRenderableProvider() {
+        return waterAsset.water;
     }
 
     public WaterAsset getWaterAsset() {
@@ -56,21 +62,12 @@ public class WaterComponent extends CullableComponent implements AssetUsage {
 
     @Override
     public boolean usesAsset(Asset assetToCheck) {
-        if (assetToCheck == waterAsset)
-            return true;
-
-        return false;
-    }
-
-    @Override
-    public void render(float delta) {
-        super.render(delta);
-        if (isCulled) return;
-        gameObject.sceneGraph.scene.batch.render(waterAsset.water, gameObject.sceneGraph.scene.environment, shader);
+        return assetToCheck == waterAsset;
     }
 
     @Override
     public void update(float delta) {
+        super.update(delta);
         updateMoveFactor();
         updateFoamScroll();
     }

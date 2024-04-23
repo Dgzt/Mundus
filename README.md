@@ -7,7 +7,7 @@ those scenes in a libGDX project. See [runtime usage](https://github.com/JamesTK
 for an example. You can see current milestones for
 releases on the [milestones](https://github.com/JamesTKhan/Mundus/milestones) page.
 
-![Screenshot](https://raw.githubusercontent.com/mbrlabs/Mundus/master/screenshot.png)
+![Screenshot](https://user-images.githubusercontent.com/28971753/194986389-aff7af15-c04e-4639-97c6-a1c5b185bf15.png)
 
 This project is at a very early stage in development and APIs may be missing basic features. Create an issue
 if you notice something important that is missing.
@@ -35,7 +35,16 @@ Below are some of the more interesting features, that already work
 - Undo/Redo system for most operations
 - Highly accurate game object picking system, based on id color coding & offscreen framebuffer rendering.
   Basic concept: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-an-opengl-hack/
-  
+
+### Latest Release Video
+
+[![Release video](https://img.youtube.com/vi/e7g5q4I1gdM/0.jpg)](https://www.youtube.com/watch?v=e7g5q4I1gdM)
+
+## Discord Channel
+
+If you need help with Mundus you can check out the Mundus discord [here](https://discord.gg/7MGT9JbnJX) 
+or alternatively in the libGDX discord go to **libraries/Mundus** thread under the **SPECIFIC TOPICS** section.
+
 ## Things to consider
 - Mundus is constantly changing. Especially the internal representation of save files. At this stage of the project backwards compatability
 is kept between minor changes, and I keep backwards compatability in mind for major version changes, but it is not guaranteed as the APIs are still
@@ -47,6 +56,44 @@ because of the default GLFW keycode mapping. You can change the layout mapping i
 The only runtime being developed is for libGDX, which is included in this repository. See [runtime usage](https://github.com/JamesTKhan/Mundus/wiki/Runtime-usage)
 for an example.
 Runtimes for other engines/frameworks are not planned in the near futures.
+
+## Made with Mundus
+
+Listed from newest to oldest:
+
+### [ShotGun Wedding](https://antzgames.itch.io/shotgun-wedding)
+
+Created by: [AntzGames](https://github.com/antzGames)
+
+![gif](https://user-images.githubusercontent.com/10563814/231760688-38814007-9a6d-41a7-9ed7-296de8b2d6d9.gif)
+
+---
+
+### [Santa is Coming](https://wjamesfl.itch.io/santa-is-coming)
+
+Created by: [JamesTKhan](https://github.com/JamesTKhan)
+![santa](https://user-images.githubusercontent.com/10563814/231762608-5427fd2b-4368-43e2-93ef-52ef484bc473.PNG)
+
+
+### [Raid on Bungeling Bay](https://antzgames.itch.io/raid3d)
+
+Created by: [AntzGames](https://github.com/antzGames)
+![image](https://user-images.githubusercontent.com/28971753/194956176-6964931c-ac80-43a0-9049-6d5abfe94be8.png)
+
+---
+
+### [28 Years Later](https://antzgames.itch.io/28-years-later)
+
+Created by: [AntzGames](https://github.com/antzGames)
+![image](https://user-images.githubusercontent.com/28971753/194956847-91da8ad3-eb63-42c3-b965-1317963c930f.png)
+
+---
+
+### [The Time Cruise](https://wjamesfl.itch.io/the-time-cruise)
+
+Created by: [JamesTKhan](https://github.com/JamesTKhan)
+![image](https://user-images.githubusercontent.com/28971753/194957213-7d83a201-9f68-46f1-a01a-f6b724ac5f11.png)
+
 
 ## Contributing
 Contributions are greatly appreciated. To make the process as easy as possible please follow the [Contribution Guide](https://github.com/JamesTKhan/Mundus/wiki/Contributing).

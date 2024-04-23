@@ -27,6 +27,7 @@ import com.badlogic.gdx.utils.Pool;
 import com.mbrlabs.mundus.commons.scene3d.GameObject;
 import com.mbrlabs.mundus.commons.scene3d.components.Component;
 import com.mbrlabs.mundus.commons.scene3d.components.ModelComponent;
+import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent;
 
 /**
  * @author JamesTKhan
@@ -52,8 +53,14 @@ public class ModelUtils {
         ModelInstance instance = new ModelInstance(model);
         instance.getRenderables(renderables, pool);
 
-        if (renderables.get(0).bones != null) {
-            numBones = renderables.get(0).bones.length;
+        // Bones appear to be copied to each NodePart
+        // So we just count the first renderable that has bones
+        // and break
+        for (Renderable renderable : renderables) {
+            if (renderable.bones != null) {
+                numBones += renderable.bones.length;
+                break;
+            }
         }
 
         renderables.clear();
@@ -68,9 +75,14 @@ public class ModelUtils {
      * @param rootGameObject the parent game object to apply
      */
     public static void applyGameObjectMaterials(GameObject rootGameObject) {
-        ModelComponent mc = (ModelComponent) rootGameObject.findComponentByType(Component.Type.MODEL);
+        ModelComponent mc = rootGameObject.findComponentByType(Component.Type.MODEL);
         if (mc != null) {
             mc.applyMaterials();
+        }
+
+        TerrainComponent tc = rootGameObject.findComponentByType(Component.Type.TERRAIN);
+        if (tc != null) {
+            tc.applyMaterial();
         }
 
         if (rootGameObject.getChildren() == null) return;
@@ -85,8 +97,7 @@ public class ModelUtils {
      * Checks if visible to camera using sphereInFrustum and radius
      */
     public static boolean isVisible(final Camera cam, final ModelInstance modelInstance, Vector3 center, float radius) {
-        modelInstance.transform.getTranslation(tmpVec0);
-        tmpVec0.add(center);
+        tmpVec0.set(center).mul(modelInstance.transform);
         return cam.frustum.sphereInFrustum(tmpVec0, radius);
     }
 

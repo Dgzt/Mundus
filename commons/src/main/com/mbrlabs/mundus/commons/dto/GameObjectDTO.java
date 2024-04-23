@@ -17,12 +17,15 @@
 package com.mbrlabs.mundus.commons.dto;
 
 import com.badlogic.gdx.utils.Array;
+import com.mbrlabs.mundus.commons.assets.Asset;
+
+import java.util.Map;
 
 /**
  * @author Tibor Zsuro
  * @version 21-08-2021
  */
-public class GameObjectDTO {
+public class GameObjectDTO implements AssetUsageDTO {
 
     private int id;
     private String name;
@@ -37,6 +40,7 @@ public class GameObjectDTO {
     private TerrainComponentDTO terrainComponent;
     private WaterComponentDTO waterComponent;
     private LightComponentDTO lightComponent;
+    private CustomPropertiesComponentDTO customPropertiesComponent;
     private PhysicsComponentDTO physicsComponent;
 
     public GameObjectDTO() {
@@ -120,11 +124,36 @@ public class GameObjectDTO {
         this.lightComponent = lightComponent;
     }
 
+    public CustomPropertiesComponentDTO getCustomPropertiesComponent() {
+        return customPropertiesComponent;
+    }
+
+    public void setCustomPropertiesComponent(final CustomPropertiesComponentDTO customPropertiesComponent) {
+        this.customPropertiesComponent = customPropertiesComponent;
+    }
+
     public PhysicsComponentDTO getPhysicsComponent() {
         return physicsComponent;
     }
 
     public void setPhysicsComponent(PhysicsComponentDTO physicsComponent) {
         this.physicsComponent = physicsComponent;
+    }
+
+    @Override
+    public boolean usesAsset(Asset assetToCheck, Map<String, Asset> assetMap) {
+        if (modelComponent != null && modelComponent.usesAsset(assetToCheck, assetMap)) {
+            return true;
+        }
+
+        if (terrainComponent != null && terrainComponent.usesAsset(assetToCheck, assetMap)) {
+            return true;
+        }
+
+        if (waterComponent != null && waterComponent.usesAsset(assetToCheck, assetMap)) {
+            return true;
+        }
+
+        return false;
     }
 }

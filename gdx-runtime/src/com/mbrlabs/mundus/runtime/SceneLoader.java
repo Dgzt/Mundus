@@ -29,7 +29,6 @@ import com.mbrlabs.mundus.commons.scene3d.GameObject;
 import com.mbrlabs.mundus.commons.scene3d.SceneGraph;
 import com.mbrlabs.mundus.commons.scene3d.components.Component;
 import com.mbrlabs.mundus.commons.scene3d.components.ModelComponent;
-import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent;
 import com.mbrlabs.mundus.commons.scene3d.components.WaterComponent;
 import com.mbrlabs.mundus.runtime.converter.SceneConverter;
 
@@ -65,7 +64,6 @@ public class SceneLoader {
             scene.setSkybox(skyboxAsset, mundus.getShaders().getSkyboxShader());
         }
 
-        scene.setShadowMapShader(mundus.getShaders().getShadowMapShader());
         scene.setDepthShader(mundus.getShaders().getDepthShader());
 
         SceneGraph sceneGraph = scene.sceneGraph;
@@ -104,8 +102,6 @@ public class SceneLoader {
                 } else {
                     Gdx.app.error(TAG, "Could not find model for instance: " + modelComponent.getModelAsset().getID());
                 }
-            } else if (c.getType() == Component.Type.TERRAIN) {
-                ((TerrainComponent) c).getTerrain().getTerrain().setTransform(go.getTransform());
             } else if (c.getType() == Component.Type.WATER) {
                 ((WaterComponent) c).getWaterAsset().water.setTransform(go.getTransform());
             }

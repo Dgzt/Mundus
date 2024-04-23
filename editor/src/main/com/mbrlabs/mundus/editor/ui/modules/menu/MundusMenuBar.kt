@@ -36,6 +36,7 @@ class MundusMenuBar : MenuBar() {
     val assetsMenu = AssetsMenu()
     val environmentMenu = EnvironmentMenu()
     val toolsMenu = ToolsMenu()
+    val pluginsMenu = PluginsMenu()
     private val sceneMenu = SceneMenu()
 
     init {
@@ -46,6 +47,7 @@ class MundusMenuBar : MenuBar() {
         addMenu(sceneMenu)
         addMenu(toolsMenu)
         addMenu(windowMenu)
+        addMenu(pluginsMenu)
     }
 
     override fun getTable(): Table {
@@ -54,7 +56,7 @@ class MundusMenuBar : MenuBar() {
         val menuTable = super.getTable()
 
         val icon = VisImage(Texture(Gdx.files.internal("ui/menu_icon.png")))
-        root.add(icon).center().left().pad(5f)
+        root.add(icon).center().left().pad(5f).height(icon.height)
         root.add(menuTable).expand().fill().left().center().row()
         val sep = VisTable()
         sep.background = VisUI.getSkin().getDrawable("mundus-separator-green")

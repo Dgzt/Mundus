@@ -21,11 +21,15 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import com.mbrlabs.mundus.commons.env.lights.DirectionalLight;
+import com.badlogic.gdx.math.collision.OrientedBoundingBox;
+import com.badlogic.gdx.utils.Array;
+import com.mbrlabs.mundus.commons.event.Event;
+import com.mbrlabs.mundus.commons.event.EventType;
+import com.mbrlabs.mundus.commons.scene3d.DirtyListener;
 import com.mbrlabs.mundus.commons.scene3d.GameObject;
 import com.mbrlabs.mundus.commons.scene3d.ModelCacheable;
-import com.mbrlabs.mundus.commons.shadows.ShadowMapper;
-import com.mbrlabs.mundus.commons.utils.LightUtils;
+import com.mbrlabs.mundus.commons.scene3d.ModelEventable;
+import com.mbrlabs.mundus.commons.shadows.MundusDirectionalShadowLight;
 
 import static com.mbrlabs.mundus.commons.utils.ModelUtils.isVisible;
 
@@ -33,36 +37,43 @@ import static com.mbrlabs.mundus.commons.utils.ModelUtils.isVisible;
  * Components that can be Culled via Frustum Culling should extend
  * this class and call setDimensions once they have access to a modelInstance as well as super
  * for render() and update()
- *
  * The isCulled value will be set accordingly and components can check if is isCulled == true
  * before rendering.
  *
  * @author JamesTKhan
  * @version July 18, 2022
  */
-public abstract class CullableComponent extends AbstractComponent {
+public abstract class CullableComponent extends AbstractComponent implements ModelEventable, DirtyListener {
     private final static BoundingBox tmpBounds = new BoundingBox();
     private final static Vector3 tmpScale = new Vector3();
-    private static DirectionalLight directionalLight;
+    private final static short frameCullCheckInterval = 15;
 
     protected final Vector3 center = new Vector3();
     protected final Vector3 dimensions = new Vector3();
+    private final OrientedBoundingBox orientedBoundingBox = new OrientedBoundingBox();
     protected float radius;
+
+    // Render calls since last cull check
+    protected short framesSinceLastCullCheck = 0;
 
     // Is it offscreen?
     protected boolean isCulled = false;
+    private boolean checkShadowDuringFrustumCulling = true;
+    private Array<Event> events;
     private ModelInstance modelInstance = null;
 
     public CullableComponent(GameObject go) {
         super(go);
-
-        // Update out reference on creation of new component
-        directionalLight = LightUtils.getDirectionalLight(go.sceneGraph.scene.environment);
+        go.addDirtyListener(this);
     }
 
     @Override
-    public void render(float delta) {
+    public void update(float delta) {
         if (modelInstance == null) return;
+
+        if (gameObject.scaleChanged) {
+            setDimensions(modelInstance);
+        }
 
         if (!gameObject.sceneGraph.scene.settings.useFrustumCulling) {
             isCulled = false;
@@ -73,8 +84,14 @@ public abstract class CullableComponent extends AbstractComponent {
         if (this instanceof ModelCacheable) {
             if (((ModelCacheable) this).shouldCache()) {
                 isCulled = false;
+                return;
             }
         }
+
+        // If object is not culled, don't perform a cull check every frame, just in intervals
+        // to reduce matrix calculations
+        if (!isCulled && framesSinceLastCullCheck++ < frameCullCheckInterval) return;
+        framesSinceLastCullCheck = 0;
 
         boolean visibleToPerspective;
         boolean visibleToShadowMap = false;
@@ -84,10 +101,10 @@ public abstract class CullableComponent extends AbstractComponent {
         visibleToPerspective = isVisible(sceneCam, modelInstance, center, radius);
 
         // If not visible to main cam, check if it's visible to shadow map (to prevent shadows popping out)
-        if (!visibleToPerspective) {
-            if (directionalLight.castsShadows && gameObject.sceneGraph.scene.environment.shadowMap instanceof ShadowMapper) {
-                ShadowMapper shadowMapper = (ShadowMapper) gameObject.sceneGraph.scene.environment.shadowMap;
-                visibleToShadowMap = isVisible(shadowMapper.getCam(), modelInstance, center, radius);
+        if (checkShadowDuringFrustumCulling && !visibleToPerspective) {
+            if (gameObject.sceneGraph.scene.environment.shadowMap instanceof MundusDirectionalShadowLight) {
+                MundusDirectionalShadowLight shadowLight = (MundusDirectionalShadowLight) gameObject.sceneGraph.scene.environment.shadowMap;
+                visibleToShadowMap = isVisible(shadowLight.getCamera(), modelInstance, center, radius);
             }
         }
 
@@ -95,10 +112,29 @@ public abstract class CullableComponent extends AbstractComponent {
     }
 
     @Override
-    public void update(float delta) {
-        if (gameObject.scaleChanged) {
-            setDimensions(modelInstance);
+    public void addEvent(final Event event) {
+        if (events == null) {
+            events = new Array<>(1);
         }
+        events.add(event);
+    }
+
+    @Override
+    public void removeEvent(final Event event) {
+        if (events == null) {
+            events = new Array<>(1);
+        }
+        events.removeValue(event, true);
+    }
+
+    @Override
+    public void triggerBeforeDepthRenderEvent() {
+        triggerEvent(EventType.BEFORE_DEPTH_RENDER);
+    }
+
+    @Override
+    public void triggerBeforeRenderEvent() {
+        triggerEvent(EventType.BEFORE_RENDER);
     }
 
     protected void setDimensions(ModelInstance modelInstance) {
@@ -111,9 +147,25 @@ public abstract class CullableComponent extends AbstractComponent {
         tmpBounds.getCenter(center);
         tmpBounds.getDimensions(dimensions);
         gameObject.getScale(tmpScale);
-        center.scl(tmpScale);
         dimensions.scl(tmpScale);
         radius = dimensions.len() / 2f;
+        orientedBoundingBox.set(tmpBounds, modelInstance.transform);
+    }
+
+    public OrientedBoundingBox getOrientedBoundingBox() {
+        return orientedBoundingBox;
+    }
+
+    private void triggerEvent(final EventType eventType) {
+        if (events == null) {
+            return;
+        }
+
+        for (int i = 0; i < events.size; ++i) {
+            if (eventType == events.get(i).getType()) {
+                events.get(i).action();
+            }
+        }
     }
 
     public Vector3 getCenter() {
@@ -130,5 +182,22 @@ public abstract class CullableComponent extends AbstractComponent {
 
     public boolean isCulled() {
         return isCulled;
+    }
+
+    public boolean isCheckShadowDuringFrustumCulling() {
+        return checkShadowDuringFrustumCulling;
+    }
+
+    public void setCheckShadowDuringFrustumCulling(boolean checkShadowDuringFrustumCulling) {
+        this.checkShadowDuringFrustumCulling = checkShadowDuringFrustumCulling;
+    }
+
+    @Override
+    public void onDirty() {
+        // Force update of transform so that model instance transform is also updated
+        gameObject.getTransform();
+
+        if (modelInstance == null) return;
+        orientedBoundingBox.setTransform(modelInstance.transform);
     }
 }

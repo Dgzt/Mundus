@@ -31,6 +31,9 @@ import java.io.FileNotFoundException;
 
 public class SceneManager {
 
+    private static final Json JSON = new Json();
+
+
     /**
      * Saves a scene.
      *
@@ -40,10 +43,9 @@ public class SceneManager {
     public static void saveScene(ProjectContext context, Scene scene) {
         String sceneDir = getScenePath(context, scene.getName());
 
-        Json json = new Json();
         SceneDTO sceneDTO = SceneConverter.convert(scene);
         FileHandle saveFile = Gdx.files.absolute(sceneDir);
-        saveFile.writeString(json.toJson(sceneDTO), false);
+        saveFile.writeString(JSON.toJson(sceneDTO), false);
     }
 
     /**
@@ -58,8 +60,38 @@ public class SceneManager {
      */
     public static SceneDTO loadScene(ProjectContext context, String sceneName) throws FileNotFoundException {
         String sceneDir = getScenePath(context, sceneName);
-        Json json = new Json();
-        return json.fromJson(SceneDTO.class, new FileInputStream(sceneDir));
+        return JSON.fromJson(SceneDTO.class, new FileInputStream(sceneDir));
+    }
+
+    /**
+     * Renames scene.
+     *
+     * @param context The projet context of scene.
+     * @param oldSceneName The old name of scene.
+     * @param newSceneName The new name of scene.
+     */
+    public static void renameScene(final ProjectContext context, final String oldSceneName, final String newSceneName) {
+        final String oldSceneDir = getScenePath(context, oldSceneName);
+        final String newSceneDir = getScenePath(context, newSceneName);
+        final SceneDTO scene = JSON.fromJson(SceneDTO.class, new FileHandle(oldSceneDir));
+        scene.setName(newSceneName);
+
+        FileHandle saveFile = Gdx.files.absolute(newSceneDir);
+        saveFile.writeString(JSON.toJson(scene), false);
+
+        deleteScene(context, oldSceneName);
+    }
+
+    /**
+     * Deletes scene.
+     *
+     * @param context project context of the scene
+     * @param sceneName name of the scene to remove
+     */
+    public static void deleteScene(final ProjectContext context, final String sceneName) {
+        final String sceneDir = getScenePath(context, sceneName);
+        FileHandle sceneFile = Gdx.files.absolute(sceneDir);
+        sceneFile.delete();
     }
 
     private static String getScenePath(ProjectContext context, String sceneName) {

@@ -23,10 +23,11 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.mbrlabs.mundus.editor.Mundus
 import com.mbrlabs.mundus.editor.events.AssetSelectedEvent
 import com.mbrlabs.mundus.editor.events.ComponentAddedEvent
-import com.mbrlabs.mundus.editor.events.GameObjectModifiedEvent
 import com.mbrlabs.mundus.editor.events.GameObjectSelectedEvent
+import com.mbrlabs.mundus.editor.events.ProjectChangedEvent
 import com.mbrlabs.mundus.editor.ui.widgets.AutoFocusScrollPane
 import com.mbrlabs.mundus.editor.utils.Log
+import com.mbrlabs.mundus.editorcommons.events.GameObjectModifiedEvent
 
 /**
  * @author Marcus Brummer
@@ -36,7 +37,8 @@ class Inspector : VisTable(),
         GameObjectSelectedEvent.GameObjectSelectedListener,
         GameObjectModifiedEvent.GameObjectModifiedListener,
         ComponentAddedEvent.ComponentAddedListener,
-        AssetSelectedEvent.AssetSelectedListener {
+        AssetSelectedEvent.AssetSelectedListener,
+        ProjectChangedEvent.ProjectChangedListener{
 
     companion object {
         private val TAG = Inspector::class.java.simpleName
@@ -74,6 +76,11 @@ class Inspector : VisTable(),
         add<ScrollPane>(scrollPane).expand().fill().top()
     }
 
+    fun clearWidgets() {
+        root.clear()
+        mode = InspectorMode.EMPTY
+    }
+
     override fun onGameObjectSelected(event: GameObjectSelectedEvent) {
         if (mode != InspectorMode.GAME_OBJECT) {
             mode = InspectorMode.GAME_OBJECT
@@ -98,7 +105,15 @@ class Inspector : VisTable(),
     }
 
     override fun onComponentAdded(event: ComponentAddedEvent) {
-        goInspector.addComponent(event.component)
+        val component = event.component
+
+        if (component.gameObject == goInspector.getGameObject()) {
+            goInspector.addComponent(component)
+        }
+    }
+
+    override fun onProjectChanged(event: ProjectChangedEvent) {
+        clearWidgets()
     }
 
 }

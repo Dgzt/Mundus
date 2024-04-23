@@ -19,10 +19,7 @@ package com.mbrlabs.mundus.editor.shader
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.utils.Disposable
 import com.mbrlabs.mundus.commons.shaders.DepthShader
-import com.mbrlabs.mundus.commons.shaders.ShadowMapShader
 import com.mbrlabs.mundus.commons.shaders.SkyboxShader
-import com.mbrlabs.mundus.commons.shaders.WaterShader
-import com.mbrlabs.mundus.editor.terrain.EditorTerrainShader
 import com.mbrlabs.mundus.editor.tools.picker.PickerShader
 
 /**
@@ -33,37 +30,26 @@ import com.mbrlabs.mundus.editor.tools.picker.PickerShader
 object Shaders : Disposable {
 
     val wireframeShader: WireframeShader
-    val terrainShader: EditorTerrainShader
-    val waterShader: WaterShader
     val skyboxShader: SkyboxShader
     val pickerShader: PickerShader
     val depthShader: DepthShader
-    val shadowMapShader: ShadowMapShader
 
     init {
         ShaderProgram.pedantic = false
         wireframeShader = WireframeShader()
         wireframeShader.init()
-        terrainShader = EditorTerrainShader()
-        terrainShader.init()
-        waterShader = WaterShader()
-        waterShader.init()
         skyboxShader = SkyboxShader()
         skyboxShader.init()
         pickerShader = PickerShader()
         pickerShader.init()
         depthShader = DepthShader()
         depthShader.init()
-        shadowMapShader = ShadowMapShader()
-        shadowMapShader.init()
     }
 
     override fun dispose() {
         wireframeShader.dispose()
-        terrainShader.dispose()
         skyboxShader.dispose()
         pickerShader.dispose()
-        waterShader.dispose()
         depthShader.dispose()
     }
 

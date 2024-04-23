@@ -22,12 +22,24 @@ import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.IntIntMap
+import com.mbrlabs.mundus.commons.scene3d.components.Component
+import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent
+import com.mbrlabs.mundus.commons.utils.Pools
+import com.mbrlabs.mundus.editor.Mundus
+import com.mbrlabs.mundus.editor.core.project.ProjectManager
+import com.mbrlabs.mundus.editor.events.LogEvent
+import com.mbrlabs.mundus.editor.events.LogType
+import com.mbrlabs.mundus.editor.tools.picker.GameObjectPicker
+import com.mbrlabs.mundus.pluginapi.TerrainHoverExtension
+import org.pf4j.DefaultPluginManager
 
 /**
  * @author Marcus Brummer
  * @version 24-11-2015
  */
-class FreeCamController : InputAdapter() {
+class FreeCamController(private val projectManager: ProjectManager,
+                        private val goPicker: GameObjectPicker,
+                        private val pluginManager: DefaultPluginManager) : InputAdapter() {
 
     val SPEED_01 = 10f
     val SPEED_1 = 150f
@@ -47,6 +59,8 @@ class FreeCamController : InputAdapter() {
     private var zoomAmount = SPEED_01
     private var degreesPerPixel = 0.5f
     private val tmp = Vector3()
+    private val tmp2 = Vector3()
+    private val tmp3 = Vector3()
     private var pan = true
 
     fun setCamera(camera: Camera) {
@@ -75,6 +89,16 @@ class FreeCamController : InputAdapter() {
     }
 
     /**
+     * Returns the velocity in units per second for moving forward, backward and
+     * strafing left/right.
+     *
+     * @return the current velocity
+     */
+    fun getVelocity(): Float {
+        return this.velocity
+    }
+
+    /**
      * Sets how many degrees to rotate per pixel the mouse moved.
      *
      * @param degreesPerPixel
@@ -95,7 +119,16 @@ class FreeCamController : InputAdapter() {
 
                 camera!!.direction.rotate(camera!!.up, deltaX)
                 tmp.set(camera!!.direction).crs(camera!!.up).nor()
-                camera!!.direction.rotate(tmp, deltaY)
+
+                // Resolves Gimbal Lock : https://github.com/libgdx/libgdx/issues/4023
+                val oldPitchAxis = tmp.set(camera!!.direction).crs(camera!!.up).nor()
+                val newDirection: Vector3 = tmp2.set(camera!!.direction).rotate(tmp, deltaY)
+                val newPitchAxis: Vector3 = tmp3.set(tmp2).crs(camera!!.up)
+
+                if (!newPitchAxis.hasOppositeDirection(oldPitchAxis)) {
+                    camera!!.direction.set(newDirection)
+                }
+
             } else {
                 tmp.set(camera!!.direction).crs(camera!!.up).nor().scl(deltaX / velocity)
                 camera!!.position.add(tmp)
@@ -154,5 +187,47 @@ class FreeCamController : InputAdapter() {
             }
         }
         camera!!.update(true)
+    }
+
+    override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
+        if (camera == null) {
+            return false
+        }
+
+        val currentProject = projectManager.current()
+        val currentScene = currentProject.currScene
+
+        val terrainHoverExtensions = pluginManager.getExtensions(TerrainHoverExtension::class.java)
+
+        if (terrainHoverExtensions.isNotEmpty()) {
+            val ray = currentScene.viewport.getPickRay(screenX.toFloat(), screenY.toFloat())
+
+            val go = goPicker.pick(currentScene, screenX, screenY)
+            val terrainComponent: TerrainComponent? = go?.findComponentByType(Component.Type.TERRAIN)
+
+            if (terrainComponent != null) {
+                val result = terrainComponent.getRayIntersection(Pools.vector3Pool.obtain(), ray)
+
+                terrainHoverExtensions.forEach {
+                    try {
+                        it.hover(terrainComponent, result)
+                    } catch (ex: Exception) {
+                        Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during plugin hoover event! $ex"))
+                    }
+                }
+
+                Pools.vector3Pool.free(result)
+            } else {
+                terrainHoverExtensions.forEach {
+                    try {
+                        it.hover(null, null)
+                    } catch (ex: Exception) {
+                        Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during plugin hoover event! $ex"))
+                    }
+                }
+            }
+        }
+
+        return false
     }
 }

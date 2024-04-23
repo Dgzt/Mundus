@@ -28,8 +28,7 @@ import com.mbrlabs.mundus.editor.tools.picker.PickerIDAttribute;
  * @version June 01, 2022
  */
 public class PickableLightComponent extends LightComponent implements PickableComponent {
-    private final ModelInstance modelInstance;
-
+    private ModelInstance modelInstance;
     public PickableLightComponent(GameObject go, LightType lightType) {
         super(go, lightType);
 
@@ -45,26 +44,28 @@ public class PickableLightComponent extends LightComponent implements PickableCo
         modelInstance = new ModelInstance(model);
 
         encodeRaypickColorId();
+
     }
 
     @Override
-    public void render(float delta) {
-        // Update position of cube for picking
-        gameObject.getPosition(tmp);
-        modelInstance.transform.setToTranslation(tmp);
-
+    public void update(float delta) {
         // Keeping this here for debugging if we need to render this cube
+        //gameObject.getPosition(tmp);
+        //modelInstance.transform.setToTranslation(tmp);
         //gameObject.sceneGraph.scene.batch.render(modelInstance, gameObject.sceneGraph.scene.environment));
     }
 
     @Override
     public void encodeRaypickColorId() {
+        if (modelInstance == null) return;
         PickerIDAttribute goIDa = PickerColorEncoder.encodeRaypickColorId(gameObject);
         modelInstance.materials.first().set(goIDa);
     }
 
     @Override
     public void renderPick() {
+        gameObject.getPosition(tmp);
+        modelInstance.transform.setToTranslation(tmp);
         gameObject.sceneGraph.scene.batch.render(modelInstance, Shaders.INSTANCE.getPickerShader());
     }
 }

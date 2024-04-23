@@ -206,36 +206,62 @@ public class MaterialAsset extends Asset {
      * @return the material with asset attributes applied
      */
     public Material applyToMaterial(Material material) {
+        return applyToMaterial(material, false);
+    }
+
+    /**
+     * Applies this material asset to the libGDX material.
+     *
+     * @param material the material to apply
+     * @param terrain  whether this material is for a terrain
+     * @return the material with asset attributes applied
+     */
+    public Material applyToMaterial(Material material, boolean terrain) {
         if (diffuseColor != null) {
             material.set(PBRColorAttribute.createBaseColorFactor(diffuseColor));
         }
         if (emissiveColor != null) {
             material.set(PBRColorAttribute.createEmissive(emissiveColor));
         }
-        if (diffuseTexture != null) {
-            material.set(getTextureAttribute(PBRTextureAttribute.BaseColorTexture, diffuseTexture.getTexture(), diffuseTexCoord));
+        if (!terrain) {
+            // Terrain materials use these for splat base
+            if (diffuseTexture != null) {
+                material.set(getTextureAttribute(PBRTextureAttribute.BaseColorTexture, diffuseTexture.getTexture(), diffuseTexCoord));
+            } else {
+                material.remove(PBRTextureAttribute.BaseColorTexture);
+            }
+
+            if (normalMap != null) {
+                material.set(getTextureAttribute(PBRTextureAttribute.NormalTexture, normalMap.getTexture(), normalTexCoord));
+            } else {
+                material.remove(PBRTextureAttribute.NormalTexture);
+            }
+
+            if (emissiveTexture != null) {
+                material.set(getTextureAttribute(PBRTextureAttribute.EmissiveTexture, emissiveTexture.getTexture(), emissiveTexCoord));
+            } else {
+                material.remove(PBRTextureAttribute.EmissiveTexture);
+            }
+            if (metallicRoughnessTexture != null) {
+                material.set(getTextureAttribute(PBRTextureAttribute.MetallicRoughnessTexture, metallicRoughnessTexture.getTexture(), metallicRoughnessTexCoord));
+            } else {
+                material.remove(PBRTextureAttribute.MetallicRoughnessTexture);
+            }
+            if (occlusionTexture != null) {
+                material.set(getTextureAttribute(PBRTextureAttribute.OcclusionTexture, occlusionTexture.getTexture(), occlusionTexCoord));
+            } else {
+                material.remove(PBRTextureAttribute.OcclusionTexture);
+            }
         } else {
-            material.remove(PBRTextureAttribute.BaseColorTexture);
-        }
-        if (normalMap != null) {
-            material.set(getTextureAttribute(PBRTextureAttribute.NormalTexture, normalMap.getTexture(), normalTexCoord));
-        } else {
-            material.remove(PBRTextureAttribute.NormalTexture);
-        }
-        if (emissiveTexture != null) {
-            material.set(getTextureAttribute(PBRTextureAttribute.EmissiveTexture, emissiveTexture.getTexture(), emissiveTexCoord));
-        } else {
-            material.remove(PBRTextureAttribute.EmissiveTexture);
-        }
-        if (metallicRoughnessTexture != null) {
-            material.set(getTextureAttribute(PBRTextureAttribute.MetallicRoughnessTexture, metallicRoughnessTexture.getTexture(), metallicRoughnessTexCoord));
-        } else {
-            material.remove(PBRTextureAttribute.MetallicRoughnessTexture);
-        }
-        if (occlusionTexture != null) {
-            material.set(getTextureAttribute(PBRTextureAttribute.OcclusionTexture, occlusionTexture.getTexture(), occlusionTexCoord));
-        } else {
-            material.remove(PBRTextureAttribute.OcclusionTexture);
+            // Apply texCoords for terrains
+            PBRTextureAttribute diffuse = (PBRTextureAttribute) material.get(PBRTextureAttribute.BaseColorTexture);
+            if (diffuse != null) {
+                setTexCoordInfo(diffuse, diffuseTexCoord);
+            }
+            PBRTextureAttribute normal = (PBRTextureAttribute) material.get(PBRTextureAttribute.NormalTexture);
+            if (normal != null) {
+                setTexCoordInfo(normal, normalTexCoord);
+            }
         }
 
         material.set(PBRFloatAttribute.createRoughness(roughness));
@@ -277,13 +303,17 @@ public class MaterialAsset extends Asset {
      */
     private PBRTextureAttribute getTextureAttribute(long type, Texture texture, TexCoordInfo texCoord) {
         PBRTextureAttribute attr = new PBRTextureAttribute(type, texture);
+        setTexCoordInfo(attr, texCoord);
+        return attr;
+    }
+
+    private void setTexCoordInfo(PBRTextureAttribute attr, TexCoordInfo texCoord) {
         attr.uvIndex = texCoord.uvIndex;
         attr.offsetU = texCoord.offsetU;
         attr.offsetV = texCoord.offsetV;
         attr.scaleU = texCoord.scaleU;
         attr.scaleV = texCoord.scaleV;
         attr.rotationUV = texCoord.rotationUV;
-        return attr;
     }
 
     public float getRoughness() {
@@ -458,5 +488,34 @@ public class MaterialAsset extends Asset {
 
     private boolean fileMatch(Asset childAsset, Asset assetToCheck) {
         return childAsset != null && childAsset.getFile().path().equals(assetToCheck.getFile().path());
+    }
+
+    public void duplicateMaterialAsset(MaterialAsset materialAsset) {
+        this.setRoughness(materialAsset.getRoughness());
+        this.setOpacity(materialAsset.getOpacity());
+        this.setMetallic(materialAsset.getMetallic());
+        this.setAlphaTest(materialAsset.getAlphaTest());
+        this.setNormalScale(materialAsset.getNormalScale());
+        this.setShadowBias(materialAsset.getShadowBias());
+        this.setCullFace(materialAsset.getCullFace());
+
+        this.diffuseTexCoord = materialAsset.diffuseTexCoord.deepCopy();
+        this.normalTexCoord = materialAsset.normalTexCoord.deepCopy();
+        this.emissiveTexCoord = materialAsset.emissiveTexCoord.deepCopy();
+        this.metallicRoughnessTexCoord = materialAsset.metallicRoughnessTexCoord.deepCopy();
+        this.occlusionTexCoord = materialAsset.occlusionTexCoord.deepCopy();
+
+        if (materialAsset.getDiffuseColor() != null) {
+            this.diffuseColor = materialAsset.getDiffuseColor().cpy();
+        }
+        if (materialAsset.getEmissiveColor() != null) {
+            this.emissiveColor = materialAsset.getEmissiveColor().cpy();
+        }
+
+        this.setDiffuseTexture(materialAsset.getDiffuseTexture());
+        this.setNormalMap(materialAsset.getNormalMap());
+        this.setMetallicRoughnessTexture(materialAsset.getMetallicRoughnessTexture());
+        this.setEmissiveTexture(materialAsset.getEmissiveTexture());
+        this.setOcclusionTexture(materialAsset.getOcclusionTexture());
     }
 }

@@ -38,12 +38,15 @@ import com.kotcrab.vis.ui.layout.GridGroup
 import com.kotcrab.vis.ui.widget.*
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab
 import com.mbrlabs.mundus.commons.assets.*
+import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.editor.Mundus
+import com.mbrlabs.mundus.editor.assets.EditorModelAsset
 import com.mbrlabs.mundus.editor.core.project.ProjectManager
 import com.mbrlabs.mundus.editor.events.*
 import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.editor.ui.widgets.AutoFocusScrollPane
 import com.mbrlabs.mundus.editor.utils.ObjExporter
+import java.awt.Desktop
 import java.lang.RuntimeException
 
 
@@ -56,7 +59,8 @@ class AssetsDock : Tab(false, false),
         AssetImportEvent.AssetImportListener,
         AssetDeletedEvent.AssetDeletedListener,
         GameObjectSelectedEvent.GameObjectSelectedListener,
-        FullScreenEvent.FullScreenEventListener {
+        FullScreenEvent.FullScreenEventListener,
+        MaterialDuplicatedEvent.MaterialDuplicatedEventListener {
 
     private val root = VisTable()
     private val filesViewContextContainer = VisTable(false)
@@ -69,6 +73,7 @@ class AssetsDock : Tab(false, false),
 
     private val assetOpsMenu = PopupMenu()
     private val renameAsset = MenuItem("Rename Asset")
+    private val openDirectoryAsset = MenuItem("Open Directory")
     private val deleteAsset = MenuItem("Delete Asset")
     private val exportTerrainAsset = MenuItem("Export to OBJ")
 
@@ -122,9 +127,16 @@ class AssetsDock : Tab(false, false),
 
         // asset ops right click menu
         assetOpsMenu.addItem(renameAsset)
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+            assetOpsMenu.addItem(openDirectoryAsset)
+        }
         assetOpsMenu.addItem(deleteAsset)
 
         registerListeners()
+    }
+
+    fun clearSelection() {
+        setSelected(null)
     }
 
     private fun registerListeners() {
@@ -133,6 +145,14 @@ class AssetsDock : Tab(false, false),
                 currentSelection?.asset?.let {
                     projectManager.current().assetManager.deleteAssetSafe(it, projectManager)
                     reloadAssets()
+                }
+            }
+        })
+
+        openDirectoryAsset.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                currentSelection?.asset?.let {
+                    Desktop.getDesktop().open(it.file.file().parentFile)
                 }
             }
         })
@@ -165,6 +185,20 @@ class AssetsDock : Tab(false, false),
         currentSelection = assetItem
         for (item in assetItems) {
             if (currentSelection != null && currentSelection == item) {
+                item.toggleSelectOverlay(true)
+            } else {
+                item.toggleSelectOverlay(false)
+            }
+        }
+    }
+
+    /**
+     * Highlights the selected asset item in the dock view.
+     * @param asset
+     */
+    fun setSelected(asset: Asset) {
+        for (item in assetItems) {
+            if (item.asset == asset) {
                 item.toggleSelectOverlay(true)
             } else {
                 item.toggleSelectOverlay(false)
@@ -212,12 +246,16 @@ class AssetsDock : Tab(false, false),
     }
 
     override fun onGameObjectSelected(event: GameObjectSelectedEvent) {
-        setSelected(null)
+        clearSelection()
     }
 
     override fun onFullScreenEvent(event: FullScreenEvent) {
         if (!event.isFullScreen)
             reloadAssets()
+    }
+
+    override fun onMaterialDuplicated(event: MaterialDuplicatedEvent) {
+        reloadAssets()
     }
 
     /**
@@ -276,7 +314,7 @@ class AssetsDock : Tab(false, false),
         }
 
         private fun loadBackground() {
-            if (asset is TextureAsset) {
+            if (asset is TextureProvider) {
                 nameTable.background = thumbnailOverlay
                 stack.add(Image(asset.texture))
             }

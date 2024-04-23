@@ -64,6 +64,9 @@ varying float v_alphaTest;
 
 #ifdef textureFlag
 varying MED vec2 v_texCoord0;
+#ifdef triplanarFlag
+uniform mat3 u_texCoord0Transform;
+#endif // triplanarFlag
 #endif // textureFlag
 
 #ifdef textureCoord1Flag
@@ -106,6 +109,45 @@ uniform vec4 u_BaseColorFactor;
 
 #ifdef diffuseTextureFlag
 uniform sampler2D u_diffuseTexture;
+#endif
+
+#ifdef splatFlag
+varying vec2 v_splatPosition;
+vec4 splat;
+uniform sampler2D u_texture_splat;
+    #ifdef splatRFlag
+    uniform sampler2D u_texture_r;
+    #endif
+    #ifdef splatGFlag
+    uniform sampler2D u_texture_g;
+    #endif
+    #ifdef splatBFlag
+    uniform sampler2D u_texture_b;
+    #endif
+    #ifdef splatAFlag
+    uniform sampler2D u_texture_a;
+    #endif
+    
+    #ifdef splatRNormalFlag
+    uniform sampler2D u_texture_r_normal;
+    #endif
+    #ifdef splatGNormalFlag
+    uniform sampler2D u_texture_g_normal;
+    #endif
+    #ifdef splatBNormalFlag
+    uniform sampler2D u_texture_b_normal;
+    #endif
+    #ifdef splatANormalFlag
+    uniform sampler2D u_texture_a_normal;
+    #endif
+#endif
+
+// mouse picking
+#ifdef PICKER
+const MED vec4 COLOR_BRUSH = vec4(0.4,0.4,0.4, 0.4);
+uniform vec3 u_pickerPos;
+uniform float u_pickerRadius;
+uniform int u_pickerActive;
 #endif
 
 #ifdef specularColorFlag
@@ -234,6 +276,34 @@ uniform vec2 u_MetallicRoughnessValues;
 varying vec3 v_position;
 varying float v_clipDistance;
 
+#ifdef triplanarFlag
+    // getColor == triplanar method
+    #define getColor triplanar
+    const float scaleAdjust = 0.01;
+    vec4 triplanar(sampler2D diffuseTexture, vec3 triblend)
+    {
+        vec2 uvX = v_position.zy * scaleAdjust;
+        vec2 uvY = v_position.xz * scaleAdjust;
+        vec2 uvZ = v_position.xy * scaleAdjust;
+
+        // Apply tex coord transforms
+        uvX = (u_texCoord0Transform * vec3(uvX, 1.0)).xy;
+        uvY = (u_texCoord0Transform * vec3(uvY, 1.0)).xy;
+        uvZ = (u_texCoord0Transform * vec3(uvZ, 1.0)).xy;
+
+        // project+fetch
+        vec4 x = texture2D(diffuseTexture, uvX);
+        vec4 y = texture2D(diffuseTexture, uvY);
+        vec4 z = texture2D(diffuseTexture, uvZ);
+        vec4 col = x * triblend.x + y * triblend.y + z * triblend.z;
+
+        return col;
+    }
+#else
+// getColor == texture2D method
+#define getColor texture2D
+#endif
+
 // Encapsulate the various inputs used by the various functions in the shading equation
 // We store values in structs to simplify the integration of alternative implementations
 // PBRSurfaceInfo contains light independant information (surface/material only)
@@ -285,7 +355,34 @@ vec3 getNormal()
 {
 #ifdef tangentFlag
 #ifdef normalTextureFlag
-    vec3 n = texture2D(u_normalTexture, v_normalUV).rgb;
+
+    #ifdef triplanarFlag
+        vec3 colorUv = clamp(pow(abs(v_TBN[2]), vec3(4.0)), vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0));
+        colorUv /= dot(colorUv, vec3(1.0,1.0,1.0));
+    #else
+        vec2 colorUv = v_diffuseUV;
+    #endif
+
+    vec3 n = getColor(u_normalTexture, colorUv).rgb;
+
+    #ifdef splatFlag
+    vec3 splatNormal;
+    #ifdef splatRNormalFlag
+        splatNormal += getColor(u_texture_r_normal, colorUv).rgb * splat.r;
+    #endif
+    #ifdef splatGNormalFlag
+        splatNormal += getColor(u_texture_g_normal, colorUv).rgb * splat.g;
+    #endif
+    #ifdef splatBNormalFlag
+        splatNormal += getColor(u_texture_b_normal, colorUv).rgb * splat.b;
+    #endif
+    #ifdef splatANormalFlag
+        splatNormal += getColor(u_texture_a_normal, colorUv).rgb * splat.a;
+    #endif
+    float normalBlendFactor = (1.0 - splat.r - splat.g - splat.b - splat.a);
+    n = (n * normalBlendFactor) + splatNormal;
+    #endif // splatFlag
+
     n = normalize(v_TBN * ((2.0 * n - 1.0) * vec3(u_NormalScale, u_NormalScale, 1.0)));
 #else
     vec3 n = normalize(v_TBN[2].xyz);
@@ -298,6 +395,10 @@ vec3 getNormal()
 }
 #endif
 
+#ifdef ENV_ROTATION
+uniform mat3 u_envRotation;
+#endif
+
 // Calculation of the lighting contribution from an optional Image Based Light source.
 // Precomputed Environment Maps are required uniform inputs and are computed as outlined in [1].
 // See our README.md on Environment Maps [3] for additional discussion.
@@ -306,18 +407,29 @@ vec3 getIBLContribution(PBRSurfaceInfo pbrSurface, vec3 n, vec3 reflection)
 {
     // retrieve a scale and bias to F0. See [1], Figure 3
 #ifdef brdfLUTTexture
-	vec2 brdf = SRGBtoLINEAR(texture2D(u_brdfLUT, vec2(pbrSurface.NdotV, 1.0 - pbrSurface.perceptualRoughness))).xy;
+	vec2 brdf = texture2D(u_brdfLUT, vec2(pbrSurface.NdotV, 1.0 - pbrSurface.perceptualRoughness)).xy;
 #else // TODO not sure about how to compute it ...
 	vec2 brdf = vec2(pbrSurface.NdotV, pbrSurface.perceptualRoughness);
 #endif
-    
-    vec3 diffuseLight = SRGBtoLINEAR(textureCube(u_DiffuseEnvSampler, n)).rgb;
+
+#ifdef ENV_ROTATION
+	vec3 diffuseDirection = u_envRotation * n;
+#else
+	vec3 diffuseDirection = n;
+#endif
+    vec3 diffuseLight = SRGBtoLINEAR(textureCube(u_DiffuseEnvSampler, diffuseDirection)).rgb;
+
+#ifdef ENV_ROTATION
+	vec3 specularDirection = u_envRotation * reflection;
+#else
+	vec3 specularDirection = reflection;
+#endif
 
 #ifdef USE_TEX_LOD
     float lod = (pbrSurface.perceptualRoughness * u_mipmapScale);
-    vec3 specularLight = SRGBtoLINEAR(textureCubeLodEXT(u_SpecularEnvSampler, reflection, lod)).rgb;
+    vec3 specularLight = SRGBtoLINEAR(textureCubeLodEXT(u_SpecularEnvSampler, specularDirection, lod)).rgb;
 #else
-    vec3 specularLight = SRGBtoLINEAR(textureCube(u_SpecularEnvSampler, reflection)).rgb;
+    vec3 specularLight = SRGBtoLINEAR(textureCube(u_SpecularEnvSampler, specularDirection)).rgb;
 #endif
 
     vec3 diffuse = diffuseLight * pbrSurface.diffuseColor;
@@ -388,7 +500,7 @@ void main() {
 #ifdef colorFlag
     baseColor *= v_color;
 #endif
-    
+
     vec3 color = baseColor.rgb;
 
     // final frag color
@@ -491,7 +603,7 @@ vec3 getSpotLightContribution(PBRSurfaceInfo pbrSurface, SpotLight light)
 void main() {
     if ( v_clipDistance < 0.0 )
         discard;
-	
+
     // Metallic and Roughness material properties are packed together
     // In glTF, these factors can be specified by fixed scalar values
     // or from a metallic-roughness map
@@ -517,8 +629,43 @@ void main() {
 	vec4 baseColorFactor = vec4(1.0, 1.0, 1.0, 1.0);
 #endif
 
+#ifdef triplanarFlag
+    #define getColor triplanar
+    vec3 colorUv = clamp(pow(abs(v_TBN[2]), vec3(4.0)), vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0));
+    colorUv /= dot(colorUv, vec3(1.0,1.0,1.0));
+#else
+    #ifdef diffuseTextureFlag
+    vec2 colorUv = v_diffuseUV;
+    #else
+    vec2 colorUv = vec2(0.0);
+    #endif
+    #define getColor texture2D
+#endif
+
 #ifdef diffuseTextureFlag
-    vec4 baseColor = SRGBtoLINEAR(texture2D(u_diffuseTexture, v_diffuseUV)) * baseColorFactor;
+    vec4 baseColor = getColor(u_diffuseTexture, colorUv);
+
+    #ifdef splatFlag
+        splat = texture2D(u_texture_splat, v_splatPosition);
+        #ifdef splatRFlag
+        vec4 colorR = getColor(u_texture_r, colorUv);
+        baseColor = mix(baseColor, mix(baseColor, colorR, splat.r), colorR.a);
+        #endif
+        #ifdef splatGFlag
+        vec4 colorG = getColor(u_texture_g, colorUv);
+        baseColor = mix(baseColor, mix(baseColor, colorG, splat.g), colorG.a);
+        #endif
+        #ifdef splatBFlag
+        vec4 colorB = getColor(u_texture_b, colorUv);
+        baseColor = mix(baseColor, mix(baseColor, colorB, splat.b), colorB.a);
+        #endif
+        #ifdef splatAFlag
+        vec4 colorA = getColor(u_texture_a, colorUv);
+        baseColor = mix(baseColor, mix(baseColor, colorA, splat.a), colorA.a);
+        #endif
+    #endif // splatFlag
+
+    baseColor = SRGBtoLINEAR(baseColor) * baseColorFactor;
 #else
     vec4 baseColor = baseColorFactor;
 #endif
@@ -526,7 +673,7 @@ void main() {
 #ifdef colorFlag
     baseColor *= v_color;
 #endif
-    
+
     vec3 f0 = vec3(0.04);
     vec3 diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
@@ -623,14 +770,14 @@ void main() {
     color += emissive;
 #endif
 
-    
+
     // final frag color
 #ifdef GAMMA_CORRECTION
     out_FragColor = vec4(pow(color,vec3(1.0/GAMMA_CORRECTION)), baseColor.a);
 #else
     out_FragColor = vec4(color, baseColor.a);
 #endif
-    
+
 #ifdef fogFlag
 #ifdef fogEquationFlag
     float fog = (eyeDistance - u_fogEquation.x) / (u_fogEquation.y - u_fogEquation.x);
@@ -651,6 +798,17 @@ void main() {
 	#endif
 #else
 	out_FragColor.a = 1.0;
+#endif
+
+#ifdef PICKER
+if(u_pickerActive == 1) {
+    float dist = distance(u_pickerPos, v_position);
+    if(dist <= u_pickerRadius) {
+        float gradient = (u_pickerRadius - dist + 0.01) / u_pickerRadius;
+        gradient = 1.0 - clamp(cos(gradient * M_PI), 0.0, 1.0);
+        out_FragColor += COLOR_BRUSH * gradient;
+    }
+}
 #endif
 
 }

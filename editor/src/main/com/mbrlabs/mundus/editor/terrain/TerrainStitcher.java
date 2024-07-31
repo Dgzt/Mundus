@@ -10,9 +10,9 @@ import com.mbrlabs.mundus.commons.terrain.Terrain;
 import com.mbrlabs.mundus.commons.utils.Pools;
 import com.mbrlabs.mundus.editor.Mundus;
 import com.mbrlabs.mundus.editor.core.project.ProjectContext;
-import com.mbrlabs.mundus.editor.events.TerrainVerticesChangedEvent;
 import com.mbrlabs.mundus.editor.history.commands.TerrainStitchCommand;
 import com.mbrlabs.mundus.editor.ui.UI;
+import com.mbrlabs.mundus.editorcommons.events.TerrainVerticesChangedEvent;
 
 /**
  * Utility class to stitch all terrains within a scene together based on their neighbors.

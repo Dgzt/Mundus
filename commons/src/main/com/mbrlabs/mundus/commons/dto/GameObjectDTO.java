@@ -42,6 +42,7 @@ public class GameObjectDTO implements AssetUsageDTO {
     private WaterComponentDTO waterComponent;
     private LightComponentDTO lightComponent;
     private CustomPropertiesComponentDTO customPropertiesComponent;
+    private Array<CustomComponentDTO> customComponents;
 
     public GameObjectDTO() {
         childs = new Array<>();
@@ -138,6 +139,14 @@ public class GameObjectDTO implements AssetUsageDTO {
 
     public void setCustomPropertiesComponent(final CustomPropertiesComponentDTO customPropertiesComponent) {
         this.customPropertiesComponent = customPropertiesComponent;
+    }
+
+    public Array<CustomComponentDTO> getCustomComponents() {
+        return customComponents;
+    }
+
+    public void setCustomComponents(final Array<CustomComponentDTO> customComponents) {
+        this.customComponents = customComponents;
     }
 
     @Override

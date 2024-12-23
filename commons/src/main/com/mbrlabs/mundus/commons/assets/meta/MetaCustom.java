@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.mbrlabs.mundus.commons.assets.meta;
 
-package com.mbrlabs.mundus.editor.assets
+import com.badlogic.gdx.utils.ObjectMap;
 
-/**
- * @author Marcus Brummer
- * @version 10-10-2016
- */
-class AssetAlreadyExistsException : Exception()
+public class MetaCustom {
+
+    public static final String JSON_PROPERTIES = "properties";
+
+    private final ObjectMap<String, String> properties = new ObjectMap<>();
+
+    public ObjectMap<String, String> getProperties() {
+        return properties;
+    }
+
+    @Override
+    public String toString() {
+        return "MetaCustom{" +
+                "properties=" + properties +
+                '}';
+    }
+}

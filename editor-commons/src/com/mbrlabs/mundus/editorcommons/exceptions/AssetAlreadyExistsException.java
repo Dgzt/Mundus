@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023. See AUTHORS file.
+ * Copyright (c) 2016. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.editor.events
+package com.mbrlabs.mundus.editorcommons.exceptions;
 
-import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent
-
-class TerrainAddedEvent(val terrainComponent: TerrainComponent) {
-
-    interface TerrainAddedEventListener {
-        @Subscribe
-        fun onTerrainAdded(event: TerrainAddedEvent)
-    }
+public class AssetAlreadyExistsException extends Exception {
 }

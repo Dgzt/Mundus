@@ -36,7 +36,9 @@ public enum AssetType {
     /** Skybox file. Holds reference to skybox textures. **/
     SKYBOX("Skybox"),
     /** Holds the terrain textures to be used. **/
-    TERRAIN_LAYER("Terrain Layer");
+    TERRAIN_LAYER("Terrain Layer"),
+    /** Custom file. For plugins. **/
+    CUSTOM("Custom");
 
     private final String value;
 

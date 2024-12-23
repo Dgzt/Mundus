@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.editor.events
+package com.mbrlabs.mundus.pluginapi;
 
-import com.mbrlabs.mundus.editor.core.project.ProjectContext
+import com.badlogic.gdx.math.Vector3;
+import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent;
+import org.pf4j.ExtensionPoint;
 
-/**
- * @author Marcus Brummer
- * @version 24-12-2015
- */
-class ProjectChangedEvent(val projectContext: ProjectContext) {
+public interface TerrainHoverExtension extends ExtensionPoint {
 
-    interface ProjectChangedListener {
-        @Subscribe
-        fun onProjectChanged(event: ProjectChangedEvent)
-    }
+    /**
+     * The {@code terrainComponent} and {@code intersection} can be null if the mouse is not on terrain.
+     */
+    void hover(TerrainComponent terrainComponent, Vector3 intersection);
 
 }

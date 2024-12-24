@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.editor.events
+package com.mbrlabs.mundus.pluginapi;
 
-import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent
+import com.badlogic.gdx.utils.Array;
+import com.mbrlabs.mundus.commons.scene3d.components.TerrainComponent;
+import org.pf4j.ExtensionPoint;
 
-class TerrainRemovedEvent(val terrainComponent: TerrainComponent) {
+public interface TerrainSceneExtension extends ExtensionPoint {
 
-    interface TerrainRemovedEventListener {
-        @Subscribe
-        fun onTerrainRemoved(event: TerrainRemovedEvent)
-    }
+    /**
+     * Calls this method ad scene loaded.
+     *
+     * @param terrains The loaded terrain's component.
+     */
+    void sceneLoaded(Array<TerrainComponent> terrains);
 }

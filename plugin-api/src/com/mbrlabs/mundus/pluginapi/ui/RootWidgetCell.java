@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.editor.events
+package com.mbrlabs.mundus.pluginapi.ui;
 
-import com.mbrlabs.mundus.commons.scene3d.GameObject
+public interface RootWidgetCell extends Cell {
 
-/**
- * @author Marcus Brummer
- * @version 23-01-2016
- */
-class GameObjectModifiedEvent(var gameObject: GameObject?) {
-
-    interface GameObjectModifiedListener {
-        @Subscribe
-        fun onGameObjectModified(event: GameObjectModifiedEvent)
-    }
-
+    RootWidget getRootWidget();
 }

@@ -19,7 +19,6 @@ class MundusPreferencesManager(preferencesKey: String) : PreferencesManager {
         const val GLOB_OPTIMIZE_TERRAIN_UPDATES = "optimize-terrain-updates"
         const val GLOB_LINE_WIDTH_SELECTION = "line-width-selection"
         const val GLOB_LINE_WIDTH_WIREFRAME = "line-width-wireframe"
-        const val GLOB_LINE_WIDTH_HELPER_LINE = "line-width-helper-line"
 
         // Debug renderer settings
         const val GLOB_BOOL_DEBUG_RENDERER_ON = "debug-renderer-on"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.editor.events
+package com.mbrlabs.mundus.editorcommons;
 
-/**
- * @author Marcus Brummer
- * @version 12-12-2015
- */
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Subscribe
+public interface EventListener {
+}

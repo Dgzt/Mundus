@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.commons.scene3d.components;
-
-import com.mbrlabs.mundus.commons.scene3d.GameObject;
+package com.mbrlabs.mundus.pluginapi.ui;
 
 /**
- * @author Marcus Brummer
- * @version 16-01-2016
+ * Label widget.
  */
-public interface Component {
+public interface Label {
 
-    enum Type {
-        MODEL, TERRAIN, LIGHT, PARTICLE_SYSTEM, WATER, CUSTOM_PROPERTIES, PHYSICS, NAVMESH, TERRAIN_MANAGER
-    }
-
-    GameObject getGameObject();
-
-    void update(float delta);
-
-    Type getType();
-
-    void setType(Type type);
-
-    void remove();
-
-    Component clone(GameObject go);
+    /**
+     * Sets text on widget.
+     *
+     * @param text The new text.
+     */
+    void setText(String text);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016. See AUTHORS file.
+ * Copyright (c) 2024. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,12 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.commons.scene3d.components;
+package com.mbrlabs.mundus.editor.plugin
 
-import com.mbrlabs.mundus.commons.scene3d.GameObject;
+import com.badlogic.gdx.scenes.scene2d.ui.Cell
+import com.mbrlabs.mundus.pluginapi.ui.Label
+import com.mbrlabs.mundus.pluginapi.ui.LabelCell
 
-/**
- * @author Marcus Brummer
- * @version 16-01-2016
- */
-public interface Component {
-
-    enum Type {
-        MODEL, TERRAIN, LIGHT, PARTICLE_SYSTEM, WATER, CUSTOM_PROPERTIES, PHYSICS, NAVMESH, TERRAIN_MANAGER
-    }
-
-    GameObject getGameObject();
-
-    void update(float delta);
-
-    Type getType();
-
-    void setType(Type type);
-
-    void remove();
-
-    Component clone(GameObject go);
+class LabelCellImpl(private val labelCell: Cell<LabelImpl>) : CellImpl(labelCell), LabelCell {
+    override fun getLabel(): Label = labelCell.actor
 }

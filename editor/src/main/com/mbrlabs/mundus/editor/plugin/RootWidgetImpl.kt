@@ -21,6 +21,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Array
+import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.VisCheckBox
 import com.kotcrab.vis.ui.widget.VisRadioButton
 import com.kotcrab.vis.ui.widget.VisSelectBox
@@ -192,9 +193,10 @@ class RootWidgetImpl : VisTable(), RootWidget {
     }
 
     override fun addTextureGrid(): Cell {
-        val textureGrid = TextureGrid<TextureProvider>(50, 5)
+        val textureGrid = TextureGrid<TextureProvider>(40, 5)
+        textureGrid.background = VisUI.getSkin().getDrawable("menu-bg")
 
-        val cell = add(textureGrid)
+        val cell = add(textureGrid).expand().fill().pad(5f)
         return CellImpl(cell)
     }
 

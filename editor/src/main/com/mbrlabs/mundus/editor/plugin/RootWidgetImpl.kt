@@ -22,7 +22,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Array
 import com.kotcrab.vis.ui.widget.VisCheckBox
-import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisRadioButton
 import com.kotcrab.vis.ui.widget.VisSelectBox
 import com.kotcrab.vis.ui.widget.VisTable
@@ -32,9 +31,11 @@ import com.kotcrab.vis.ui.widget.spinner.IntSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.kotcrab.vis.ui.widget.spinner.SpinnerModel
+import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.editor.Mundus
 import com.mbrlabs.mundus.editor.events.LogEvent
 import com.mbrlabs.mundus.editor.events.LogType
+import com.mbrlabs.mundus.editor.ui.widgets.TextureGrid
 import com.mbrlabs.mundus.pluginapi.ui.ButtonListener
 import com.mbrlabs.mundus.pluginapi.ui.CheckboxListener
 import com.mbrlabs.mundus.pluginapi.ui.FloatSpinnerListener
@@ -187,6 +188,13 @@ class RootWidgetImpl : VisTable(), RootWidget {
         })
 
         val cell = add(selectBox)
+        return CellImpl(cell)
+    }
+
+    override fun addTextureGrid(): Cell {
+        val textureGrid = TextureGrid<TextureProvider>(50, 5)
+
+        val cell = add(textureGrid)
         return CellImpl(cell)
     }
 

@@ -158,6 +158,13 @@ public interface RootWidget {
     <T> Cell addSelectBox(Array<T> selectList, T defaultValue, SelectBoxListener<T> listener);
 
     /**
+     * Adds texture grid widget.
+     *
+     * @return The texture grid widget.
+     */
+    Cell addTextureGrid();
+
+    /**
      * Adds row.
      */
     void addRow();

@@ -32,7 +32,7 @@ public class EditorModelAsset extends ModelAsset implements TextureProvider {
 
     @Override
     public Texture getTexture() {
-        return null;
+        return getThumbnail();
     }
 
     @Override

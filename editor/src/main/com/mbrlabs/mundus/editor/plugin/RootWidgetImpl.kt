@@ -33,9 +33,11 @@ import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.kotcrab.vis.ui.widget.spinner.SpinnerModel
 import com.mbrlabs.mundus.commons.assets.Asset
+import com.mbrlabs.mundus.commons.assets.ModelAsset
 import com.mbrlabs.mundus.commons.assets.TextureAsset
 import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.editor.Mundus
+import com.mbrlabs.mundus.editor.assets.AssetModelFilter
 import com.mbrlabs.mundus.editor.assets.AssetTextureFilter
 import com.mbrlabs.mundus.editor.events.LogEvent
 import com.mbrlabs.mundus.editor.events.LogType
@@ -51,6 +53,7 @@ import com.mbrlabs.mundus.pluginapi.ui.IntSpinnerListener
 import com.mbrlabs.mundus.pluginapi.ui.SpinnerListener
 import com.mbrlabs.mundus.pluginapi.ui.Cell
 import com.mbrlabs.mundus.pluginapi.ui.LabelCell
+import com.mbrlabs.mundus.pluginapi.ui.ModelAssetSelectionDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.RootWidgetCell
 import com.mbrlabs.mundus.pluginapi.ui.SelectBoxListener
 import com.mbrlabs.mundus.pluginapi.ui.TextFieldChangeListener
@@ -230,6 +233,19 @@ class RootWidgetImpl : VisTable(), RootWidget {
                 } catch (e: IOException) {
                     e.printStackTrace()
                     UI.toaster.error("Error while selected texture asset")
+                }
+            }
+        })
+    }
+
+    override fun showModelAssetSelectionDialog(listener: ModelAssetSelectionDialogListener) {
+        UI.assetSelectionDialog.show(false, AssetModelFilter(), object: AssetPickerDialog.AssetPickerListener {
+            override fun onSelected(asset: Asset?) {
+                try {
+                    listener.onSelected(asset as ModelAsset)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    UI.toaster.error("Error while selected model asset")
                 }
             }
         })

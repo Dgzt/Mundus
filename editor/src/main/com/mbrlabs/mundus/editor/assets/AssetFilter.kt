@@ -18,6 +18,7 @@ package com.mbrlabs.mundus.editor.assets
 
 import com.mbrlabs.mundus.commons.assets.Asset
 import com.mbrlabs.mundus.commons.assets.MaterialAsset
+import com.mbrlabs.mundus.commons.assets.ModelAsset
 import com.mbrlabs.mundus.commons.assets.TextureAsset
 
 /**
@@ -45,5 +46,11 @@ class AssetMaterialFilter : AssetFilter {
 class AssetTextureFilter : AssetFilter {
     override fun ignore(asset: Asset): Boolean {
         return asset !is TextureAsset
+    }
+}
+
+class AssetModelFilter : AssetFilter {
+    override fun ignore(asset: Asset): Boolean {
+        return asset !is ModelAsset
     }
 }

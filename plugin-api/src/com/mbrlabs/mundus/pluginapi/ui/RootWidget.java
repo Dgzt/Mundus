@@ -186,4 +186,11 @@ public interface RootWidget {
      * @param listener The listener.
      */
     void showTextureAssetSelectionDialog(TextureAssetSelectionDialogListener listener);
+
+    /**
+     * Shows model asset selection dialog.
+     *
+     * @param listener The listener.
+     */
+    void showModelAssetSelectionDialog(ModelAssetSelectionDialogListener listener);
 }

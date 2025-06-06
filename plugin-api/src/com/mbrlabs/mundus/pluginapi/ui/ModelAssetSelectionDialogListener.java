@@ -16,9 +16,9 @@
 
 package com.mbrlabs.mundus.pluginapi.ui;
 
-import com.mbrlabs.mundus.commons.assets.ModelAsset;
+import com.mbrlabs.mundus.editorcommons.assets.EditorModelAsset;
 
 public interface ModelAssetSelectionDialogListener {
 
-    void onSelected(ModelAsset asset);
+    void onSelected(EditorModelAsset asset);
 }

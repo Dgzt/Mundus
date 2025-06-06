@@ -40,7 +40,6 @@ import com.kotcrab.vis.ui.widget.tabbedpane.Tab
 import com.mbrlabs.mundus.commons.assets.*
 import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.editor.Mundus
-import com.mbrlabs.mundus.editor.assets.EditorModelAsset
 import com.mbrlabs.mundus.editor.core.project.ProjectManager
 import com.mbrlabs.mundus.editor.events.*
 import com.mbrlabs.mundus.editor.ui.UI

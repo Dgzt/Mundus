@@ -21,7 +21,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Array
-import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.VisCheckBox
 import com.kotcrab.vis.ui.widget.VisRadioButton
 import com.kotcrab.vis.ui.widget.VisSelectBox
@@ -33,9 +32,7 @@ import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.kotcrab.vis.ui.widget.spinner.SpinnerModel
 import com.mbrlabs.mundus.commons.assets.Asset
-import com.mbrlabs.mundus.commons.assets.ModelAsset
 import com.mbrlabs.mundus.commons.assets.TextureAsset
-import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.editor.Mundus
 import com.mbrlabs.mundus.editor.assets.AssetModelFilter
 import com.mbrlabs.mundus.editor.assets.AssetTextureFilter
@@ -43,7 +40,7 @@ import com.mbrlabs.mundus.editor.events.LogEvent
 import com.mbrlabs.mundus.editor.events.LogType
 import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.editor.ui.modules.dialogs.assets.AssetPickerDialog
-import com.mbrlabs.mundus.editor.ui.widgets.TextureGrid
+import com.mbrlabs.mundus.editorcommons.assets.EditorModelAsset
 import com.mbrlabs.mundus.pluginapi.ui.ButtonListener
 import com.mbrlabs.mundus.pluginapi.ui.CheckboxListener
 import com.mbrlabs.mundus.pluginapi.ui.FloatSpinnerListener
@@ -241,7 +238,7 @@ class RootWidgetImpl : VisTable(), RootWidget {
         UI.assetSelectionDialog.show(false, AssetModelFilter(), object: AssetPickerDialog.AssetPickerListener {
             override fun onSelected(asset: Asset?) {
                 try {
-                    listener.onSelected(asset as ModelAsset)
+                    listener.onSelected(asset as EditorModelAsset)
                 } catch (e: IOException) {
                     e.printStackTrace()
                     UI.toaster.error("Error while selected model asset")

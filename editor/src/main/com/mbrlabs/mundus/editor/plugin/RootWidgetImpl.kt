@@ -58,6 +58,7 @@ import com.mbrlabs.mundus.pluginapi.ui.RootWidgetCell
 import com.mbrlabs.mundus.pluginapi.ui.SelectBoxListener
 import com.mbrlabs.mundus.pluginapi.ui.TextFieldChangeListener
 import com.mbrlabs.mundus.pluginapi.ui.TextureAssetSelectionDialogListener
+import com.mbrlabs.mundus.pluginapi.ui.TextureGridCell
 import java.io.IOException
 
 class RootWidgetImpl : VisTable(), RootWidget {
@@ -202,12 +203,10 @@ class RootWidgetImpl : VisTable(), RootWidget {
         return CellImpl(cell)
     }
 
-    override fun addTextureGrid(): Cell {
-        val textureGrid = TextureGrid<TextureProvider>(40, 5)
-        textureGrid.background = VisUI.getSkin().getDrawable("menu-bg")
-
+    override fun addTextureGrid(): TextureGridCell {
+        val textureGrid = TextureGridImpl()
         val cell = add(textureGrid).expand().fill().pad(5f)
-        return CellImpl(cell)
+        return TextureGridCellImpl(cell)
     }
 
     override fun addRow() {

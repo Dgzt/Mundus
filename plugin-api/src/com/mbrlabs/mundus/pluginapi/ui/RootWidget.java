@@ -162,7 +162,7 @@ public interface RootWidget {
      *
      * @return The texture grid widget.
      */
-    Cell addTextureGrid();
+    TextureGridCell addTextureGrid();
 
     /**
      * Adds row.

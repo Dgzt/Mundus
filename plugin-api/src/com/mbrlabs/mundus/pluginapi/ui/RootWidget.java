@@ -179,4 +179,11 @@ public interface RootWidget {
      * Clears the widget.
      */
     void clearWidgets();
+
+    /**
+     * Shows texture asset selection dialog.
+     *
+     * @param listener The listener.
+     */
+    void showTextureAssetSelectionDialog(TextureAssetSelectionDialogListener listener);
 }

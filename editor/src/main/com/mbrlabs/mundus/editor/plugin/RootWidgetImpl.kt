@@ -32,10 +32,15 @@ import com.kotcrab.vis.ui.widget.spinner.IntSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.kotcrab.vis.ui.widget.spinner.SpinnerModel
+import com.mbrlabs.mundus.commons.assets.Asset
+import com.mbrlabs.mundus.commons.assets.TextureAsset
 import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.editor.Mundus
+import com.mbrlabs.mundus.editor.assets.AssetTextureFilter
 import com.mbrlabs.mundus.editor.events.LogEvent
 import com.mbrlabs.mundus.editor.events.LogType
+import com.mbrlabs.mundus.editor.ui.UI
+import com.mbrlabs.mundus.editor.ui.modules.dialogs.assets.AssetPickerDialog
 import com.mbrlabs.mundus.editor.ui.widgets.TextureGrid
 import com.mbrlabs.mundus.pluginapi.ui.ButtonListener
 import com.mbrlabs.mundus.pluginapi.ui.CheckboxListener
@@ -49,6 +54,8 @@ import com.mbrlabs.mundus.pluginapi.ui.LabelCell
 import com.mbrlabs.mundus.pluginapi.ui.RootWidgetCell
 import com.mbrlabs.mundus.pluginapi.ui.SelectBoxListener
 import com.mbrlabs.mundus.pluginapi.ui.TextFieldChangeListener
+import com.mbrlabs.mundus.pluginapi.ui.TextureAssetSelectionDialogListener
+import java.io.IOException
 
 class RootWidgetImpl : VisTable(), RootWidget {
 
@@ -213,6 +220,19 @@ class RootWidgetImpl : VisTable(), RootWidget {
 
     override fun clearWidgets() {
         clear()
+    }
+
+    override fun showTextureAssetSelectionDialog(listener: TextureAssetSelectionDialogListener) {
+        UI.assetSelectionDialog.show(false, AssetTextureFilter(), object: AssetPickerDialog.AssetPickerListener {
+            override fun onSelected(asset: Asset?) {
+                try {
+                    listener.onSelected(asset as TextureAsset)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    UI.toaster.error("Error while selected texture asset")
+                }
+            }
+        })
     }
 
     private fun <T> addSpinner(text: String, spinnerModel: SpinnerModel, listener: SpinnerListener<T>, getModelValue: () -> T): Cell {

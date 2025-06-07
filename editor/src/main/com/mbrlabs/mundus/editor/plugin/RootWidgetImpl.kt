@@ -56,6 +56,7 @@ import com.mbrlabs.mundus.pluginapi.ui.SelectBoxListener
 import com.mbrlabs.mundus.pluginapi.ui.TextFieldChangeListener
 import com.mbrlabs.mundus.pluginapi.ui.TextureAssetSelectionDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.TextureGridCell
+import com.mbrlabs.mundus.pluginapi.ui.TextureGridListener
 import java.io.IOException
 
 class RootWidgetImpl : VisTable(), RootWidget {
@@ -200,8 +201,19 @@ class RootWidgetImpl : VisTable(), RootWidget {
         return CellImpl(cell)
     }
 
-    override fun addTextureGrid(): TextureGridCell {
+    override fun addTextureGrid(changeRightClickMenu: Boolean, removeRightClickMenu: Boolean, listener: TextureGridListener): TextureGridCell {
         val textureGrid = TextureGridImpl()
+        val rightClickMenu = TextureGridRightClickMenu(changeRightClickMenu, removeRightClickMenu, listener)
+
+        textureGrid.setListener { texture, leftClick ->
+            val textureWithPosition = texture as TextureGridItemWithPosition
+            if (leftClick) {
+                // TODO select
+            } else if (changeRightClickMenu || removeRightClickMenu) {
+                rightClickMenu.show(textureWithPosition.pos)
+            }
+        }
+
         val cell = add(textureGrid).expand().fill().pad(5f)
         return TextureGridCellImpl(cell)
     }

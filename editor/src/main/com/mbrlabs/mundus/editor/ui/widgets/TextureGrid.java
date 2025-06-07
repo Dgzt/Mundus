@@ -77,6 +77,10 @@ public class TextureGrid<T extends TextureProvider> extends VisTable {
         grid.clearChildren();
     }
 
+    public int countTextures() {
+        return grid.getChildren().size;
+    }
+
     public void highlightFirst() {
         final TextureItem<T> first = (TextureItem<T>) grid.getChildren().first();
         first.highlight();

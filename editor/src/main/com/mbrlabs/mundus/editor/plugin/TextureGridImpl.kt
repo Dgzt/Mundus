@@ -27,6 +27,7 @@ class TextureGridImpl : com.mbrlabs.mundus.editor.ui.widgets.TextureGrid<Texture
     }
 
     override fun addTexture(texture: TextureProvider) {
-        super<com.mbrlabs.mundus.editor.ui.widgets.TextureGrid>.addTexture(texture)
+        val textureWithPosition = TextureGridItemWithPosition(texture, countTextures())
+        super<com.mbrlabs.mundus.editor.ui.widgets.TextureGrid>.addTexture(textureWithPosition)
     }
 }

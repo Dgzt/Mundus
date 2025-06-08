@@ -292,6 +292,7 @@ public class ProjectManager implements Disposable {
             }
         }
         assetManager.getModifiedAssets().clear();
+        assetManager.clearModifiedAssetSaveListeners();
 
         for (Asset asset : assetManager.getNewAssets()) {
             try {

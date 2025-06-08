@@ -25,6 +25,7 @@ import com.mbrlabs.mundus.editor.events.AssetDeletedEvent
 import com.mbrlabs.mundus.editor.events.AssetImportEvent
 import com.mbrlabs.mundus.editorcommons.exceptions.AssetAlreadyExistsException
 import com.mbrlabs.mundus.pluginapi.manager.AssetManager
+import com.mbrlabs.mundus.pluginapi.manager.ModifiedAssetSaveListener
 
 class AssetManagerImpl : AssetManager {
 
@@ -39,7 +40,15 @@ class AssetManagerImpl : AssetManager {
     }
 
     override fun markAsModifiedAsset(asset: Asset) {
+        markAsModifiedAsset(asset, null)
+    }
+
+    override fun markAsModifiedAsset(asset: Asset, listener: ModifiedAssetSaveListener?) {
         projectManager.current().assetManager.addModifiedAsset(asset)
+
+        if (listener != null) {
+            projectManager.current().assetManager.addNewModifiedAssetSaveListener(asset, listener)
+        }
     }
 
     override fun deleteAsset(asset: CustomAsset) {

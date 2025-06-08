@@ -40,6 +40,14 @@ public interface AssetManager {
     void markAsModifiedAsset(Asset asset);
 
     /**
+     * Marks asset as modified asset with listener.
+     *
+     * @param asset The modified asset.
+     * @param listener The listener what will be called at project saving.
+     */
+    void markAsModifiedAsset(Asset asset, ModifiedAssetSaveListener listener);
+
+    /**
      * Deletes custom asset.
      *
      * @param asset The asset.

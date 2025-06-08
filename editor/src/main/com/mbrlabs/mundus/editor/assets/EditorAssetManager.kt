@@ -23,6 +23,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.graphics.g3d.Model
 import com.badlogic.gdx.utils.Array
+import com.badlogic.gdx.utils.ObjectMap
 import com.badlogic.gdx.utils.ObjectSet
 import com.kotcrab.vis.ui.util.dialog.Dialogs
 import com.mbrlabs.mundus.commons.assets.Asset
@@ -56,6 +57,7 @@ import com.mbrlabs.mundus.editor.utils.Log
 import com.mbrlabs.mundus.editor.utils.ThumbnailGenerator
 import com.mbrlabs.mundus.editorcommons.assets.EditorModelAsset
 import com.mbrlabs.mundus.editorcommons.exceptions.AssetAlreadyExistsException
+import com.mbrlabs.mundus.pluginapi.manager.ModifiedAssetSaveListener
 import net.mgsx.gltf.exporters.GLTFExporter
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -90,6 +92,9 @@ class EditorAssetManager(assetsRoot: FileHandle) : AssetManager(assetsRoot) {
 
     private val metaSaver = MetaSaver()
 
+    /** The save listener for modified assets. */
+    private val modifiedAssetSaveListeners = ObjectMap<Asset, ModifiedAssetSaveListener>()
+
     init {
         if (rootFolder != null && (!rootFolder.exists() || !rootFolder.isDirectory)) {
             Log.fatal(TAG, "Root asset folder is not a directory")
@@ -114,6 +119,14 @@ class EditorAssetManager(assetsRoot: FileHandle) : AssetManager(assetsRoot) {
 
     fun getNewAssets(): ObjectSet<Asset> {
         return newAssets
+    }
+
+    fun addNewModifiedAssetSaveListener(asset: Asset, listener: ModifiedAssetSaveListener) {
+        modifiedAssetSaveListeners.put(asset, listener)
+    }
+
+    fun clearModifiedAssetSaveListeners() {
+        modifiedAssetSaveListeners.clear()
     }
 
     /**
@@ -547,6 +560,11 @@ class EditorAssetManager(assetsRoot: FileHandle) : AssetManager(assetsRoot) {
      */
     @Throws(IOException::class)
     fun saveAsset(asset: Asset) {
+        if (modifiedAssetSaveListeners.containsKey(asset)) {
+            val listener = modifiedAssetSaveListeners.remove(asset)
+            listener.onSave()
+        }
+
         if (asset is MaterialAsset) {
             saveMaterialAsset(asset)
         } else if (asset is TerrainAsset) {

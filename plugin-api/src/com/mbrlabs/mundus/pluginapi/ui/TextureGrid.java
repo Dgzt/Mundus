@@ -16,9 +16,12 @@
 
 package com.mbrlabs.mundus.pluginapi.ui;
 
+import com.badlogic.gdx.utils.Array;
 import com.mbrlabs.mundus.commons.utils.TextureProvider;
 
 public interface TextureGrid {
 
     void addTexture(TextureProvider texture);
+
+    void setTextures(Array<TextureProvider> textures);
 }

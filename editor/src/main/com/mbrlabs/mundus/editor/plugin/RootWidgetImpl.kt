@@ -208,7 +208,7 @@ class RootWidgetImpl : VisTable(), RootWidget {
         textureGrid.setListener { texture, leftClick ->
             val textureWithPosition = texture as TextureGridItemWithPosition
             if (leftClick) {
-                listener.onClick(textureWithPosition.pos)
+                listener.onSelect(textureWithPosition.pos)
             } else if (changeRightClickMenu || removeRightClickMenu) {
                 rightClickMenu.show(textureWithPosition.pos)
             }

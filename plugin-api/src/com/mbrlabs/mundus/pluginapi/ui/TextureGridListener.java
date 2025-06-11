@@ -18,7 +18,7 @@ package com.mbrlabs.mundus.pluginapi.ui;
 
 public interface TextureGridListener {
 
-    void onClick(int pos);
+    void onSelect(int pos);
 
     void onChange(int pos);
 

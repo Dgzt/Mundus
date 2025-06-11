@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.pluginapi.manager;
+package com.mbrlabs.mundus.editor.plugin
 
-public interface ManagerHolder {
+import com.badlogic.gdx.math.collision.Ray
+import com.mbrlabs.mundus.editor.Mundus
+import com.mbrlabs.mundus.editor.core.project.ProjectManager
+import com.mbrlabs.mundus.pluginapi.manager.ViewportManager
 
-    PluginEventManager getEventManager();
+class ViewportManagerImpl : ViewportManager {
 
-    AssetManager getAssetManager();
+    private val projectManager = Mundus.inject<ProjectManager>()
 
-    ToasterManager getToasterManager();
+    override fun getPickRay(screenX: Float, screenY: Float): Ray {
+        val scene = projectManager.current().currScene
+        val viewport = scene.viewport
 
-    ToolManager getToolManager();
-
-    ViewportManager getViewportManager();
+        return viewport.getPickRay(screenX, screenY)
+    }
 }

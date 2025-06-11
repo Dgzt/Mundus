@@ -16,15 +16,9 @@
 
 package com.mbrlabs.mundus.pluginapi.manager;
 
-public interface ManagerHolder {
+import com.badlogic.gdx.math.collision.Ray;
 
-    PluginEventManager getEventManager();
+public interface ViewportManager {
 
-    AssetManager getAssetManager();
-
-    ToasterManager getToasterManager();
-
-    ToolManager getToolManager();
-
-    ViewportManager getViewportManager();
+    Ray getPickRay(float screenX, float screenY);
 }

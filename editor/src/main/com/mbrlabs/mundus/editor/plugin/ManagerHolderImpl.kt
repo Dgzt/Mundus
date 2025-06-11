@@ -22,6 +22,7 @@ import com.mbrlabs.mundus.pluginapi.manager.ManagerHolder
 import com.mbrlabs.mundus.pluginapi.manager.PluginEventManager
 import com.mbrlabs.mundus.pluginapi.manager.ToasterManager
 import com.mbrlabs.mundus.pluginapi.manager.ToolManager
+import com.mbrlabs.mundus.pluginapi.manager.ViewportManager
 
 class ManagerHolderImpl : ManagerHolder {
     override fun getEventManager(): PluginEventManager {
@@ -35,4 +36,6 @@ class ManagerHolderImpl : ManagerHolder {
     override fun getToasterManager(): ToasterManager = ToasterManagerImpl()
 
     override fun getToolManager(): ToolManager = PluginToolManagerImpl()
+
+    override fun getViewportManager(): ViewportManager = ViewportManagerImpl()
 }

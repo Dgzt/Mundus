@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.pluginapi;
+package com.mbrlabs.mundus.pluginapi.manager;
 
-import com.mbrlabs.mundus.pluginapi.manager.ToolManager;
-import org.pf4j.ExtensionPoint;
+public interface ManagerHolder {
 
-public interface ToolExtension extends ExtensionPoint {
+    PluginEventManager getEventManager();
 
-    void toolManager(ToolManager toolManager);
+    AssetManager getAssetManager();
+
+    ToasterManager getToasterManager();
+
+    ToolManager getToolManager();
 }

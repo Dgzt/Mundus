@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024. See AUTHORS file.
+ * Copyright (c) 2025. See AUTHORS file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.mbrlabs.mundus.pluginapi;
 
-import com.mbrlabs.mundus.pluginapi.manager.AssetManager;
+import com.mbrlabs.mundus.pluginapi.manager.ManagerHolder;
 import org.pf4j.ExtensionPoint;
 
-public interface AssetExtension extends ExtensionPoint {
+public interface ManagerHolderExtension extends ExtensionPoint {
 
-    void assetManager(AssetManager assetManager);
+    void managerHolder(ManagerHolder managerHolder);
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.pluginapi.manager;
+package com.mbrlabs.mundus.pluginapi.listener;
 
 public interface ModifiedAssetSaveListener {
 

@@ -57,7 +57,7 @@ import com.mbrlabs.mundus.editor.utils.Log
 import com.mbrlabs.mundus.editor.utils.ThumbnailGenerator
 import com.mbrlabs.mundus.editorcommons.assets.EditorModelAsset
 import com.mbrlabs.mundus.editorcommons.exceptions.AssetAlreadyExistsException
-import com.mbrlabs.mundus.pluginapi.manager.ModifiedAssetSaveListener
+import com.mbrlabs.mundus.pluginapi.listener.ModifiedAssetSaveListener
 import net.mgsx.gltf.exporters.GLTFExporter
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils

@@ -25,7 +25,7 @@ import com.mbrlabs.mundus.editor.events.AssetDeletedEvent
 import com.mbrlabs.mundus.editor.events.AssetImportEvent
 import com.mbrlabs.mundus.editorcommons.exceptions.AssetAlreadyExistsException
 import com.mbrlabs.mundus.pluginapi.manager.AssetManager
-import com.mbrlabs.mundus.pluginapi.manager.ModifiedAssetSaveListener
+import com.mbrlabs.mundus.pluginapi.listener.ModifiedAssetSaveListener
 
 class AssetManagerImpl : AssetManager {
 

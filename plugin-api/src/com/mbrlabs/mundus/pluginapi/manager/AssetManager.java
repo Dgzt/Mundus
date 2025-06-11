@@ -20,6 +20,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.mbrlabs.mundus.commons.assets.Asset;
 import com.mbrlabs.mundus.commons.assets.CustomAsset;
 import com.mbrlabs.mundus.editorcommons.exceptions.AssetAlreadyExistsException;
+import com.mbrlabs.mundus.pluginapi.listener.ModifiedAssetSaveListener;
 
 public interface AssetManager {
 

@@ -42,6 +42,7 @@ import com.mbrlabs.mundus.editor.input.FreeCamController
 import com.mbrlabs.mundus.editor.input.InputManager
 import com.mbrlabs.mundus.editor.input.ShortcutController
 import com.mbrlabs.mundus.editor.plugin.AssetManagerImpl
+import com.mbrlabs.mundus.editor.plugin.PluginToolManagerImpl
 import com.mbrlabs.mundus.editor.plugin.ToasterManagerImpl
 import com.mbrlabs.mundus.editor.preferences.MundusPreferencesManager
 import com.mbrlabs.mundus.editor.profiling.MundusGLProfiler
@@ -64,6 +65,7 @@ import com.mbrlabs.mundus.pluginapi.AssetExtension
 import com.mbrlabs.mundus.pluginapi.CustomShaderRenderExtension
 import com.mbrlabs.mundus.pluginapi.DisposeExtension
 import com.mbrlabs.mundus.pluginapi.ToasterExtension
+import com.mbrlabs.mundus.pluginapi.ToolExtension
 import net.mgsx.gltf.scene3d.scene.SceneRenderableSorter
 import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider
 import org.apache.commons.io.FileUtils
@@ -349,6 +351,15 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
                 it.toasterManager(ToasterManagerImpl())
             } catch (ex: Exception) {
                 Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during passing toaster manager! $ex"))
+            }
+        }
+
+        // Setup tool manager for plugins
+        pluginManager.getExtensions(ToolExtension::class.java).forEach {
+            try {
+                it.toolManager(PluginToolManagerImpl())
+            } catch (ex: Exception) {
+                Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during passing tool manager! $ex"))
             }
         }
 

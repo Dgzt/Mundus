@@ -54,6 +54,7 @@ class ToolManager(private val inputManager: InputManager,
     var translateTool: TranslateTool
     var rotateTool: RotateTool
     var scaleTool: ScaleTool
+    var pluginTool: PluginTool
 
     init {
         terrainBrushes = Array()
@@ -66,6 +67,7 @@ class ToolManager(private val inputManager: InputManager,
         translateTool = TranslateTool(projectManager, goPicker, toolHandlePicker, history, globalPreferencesManager)
         rotateTool = RotateTool(projectManager, goPicker, toolHandlePicker, shapeRenderer, history, globalPreferencesManager)
         scaleTool = ScaleTool(projectManager, goPicker, toolHandlePicker, shapeRenderer, history, globalPreferencesManager)
+        pluginTool = PluginTool(projectManager, history)
     }
 
     fun activateTool(tool: Tool?) {
@@ -90,7 +92,7 @@ class ToolManager(private val inputManager: InputManager,
     }
 
     fun setDefaultTool() {
-        if (activeTool == null || activeTool === modelPlacementTool || activeTool is TerrainBrush) {
+        if (activeTool == null || activeTool === modelPlacementTool || activeTool === pluginTool || activeTool is TerrainBrush) {
             UI.statusBar.clearMousePos()
             val selectedGO = UI.outline.getSelectedGameObject()
             activateTool(translateTool)
@@ -143,6 +145,7 @@ class ToolManager(private val inputManager: InputManager,
         selectionTool.dispose()
         rotateTool.dispose()
         scaleTool.dispose()
+        pluginTool.dispose()
     }
 
     private fun getSelectedObject() : GameObject? {

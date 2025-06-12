@@ -40,6 +40,7 @@ import com.mbrlabs.mundus.editor.events.LogEvent
 import com.mbrlabs.mundus.editor.events.LogType
 import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.editor.ui.modules.dialogs.assets.AssetPickerDialog
+import com.mbrlabs.mundus.editor.ui.widgets.SliderWithSpinnerWidget
 import com.mbrlabs.mundus.editorcommons.assets.EditorModelAsset
 import com.mbrlabs.mundus.pluginapi.ui.ButtonListener
 import com.mbrlabs.mundus.pluginapi.ui.CheckboxListener
@@ -53,6 +54,7 @@ import com.mbrlabs.mundus.pluginapi.ui.LabelCell
 import com.mbrlabs.mundus.pluginapi.ui.ModelAssetSelectionDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.RootWidgetCell
 import com.mbrlabs.mundus.pluginapi.ui.SelectBoxListener
+import com.mbrlabs.mundus.pluginapi.ui.SliderWithSpinnerListener
 import com.mbrlabs.mundus.pluginapi.ui.TextFieldChangeListener
 import com.mbrlabs.mundus.pluginapi.ui.TextureAssetSelectionDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.TextureGridCell
@@ -198,6 +200,18 @@ class RootWidgetImpl : VisTable(), RootWidget {
         })
 
         val cell = add(selectBox)
+        return CellImpl(cell)
+    }
+
+    override fun addSliderWithSpinnerWidget(min: Float, max: Float, stepSize: Float, precision: Int, listener: SliderWithSpinnerListener): Cell {
+        val sliderWithSpinner = SliderWithSpinnerWidget(min, max, stepSize, precision)
+        sliderWithSpinner.listener = object : SliderWithSpinnerWidget.SliderWithSpinnerListener {
+            override fun changed(value: Float) {
+                listener.changed(value)
+            }
+        }
+
+        val cell = add(sliderWithSpinner)
         return CellImpl(cell)
     }
 

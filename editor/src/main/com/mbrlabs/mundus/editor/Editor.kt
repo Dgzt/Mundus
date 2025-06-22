@@ -25,6 +25,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.mbrlabs.mundus.commons.scene3d.components.Component
 import com.mbrlabs.mundus.commons.utils.DebugRenderer
 import com.mbrlabs.mundus.commons.utils.ShaderUtils
 import com.mbrlabs.mundus.editor.core.plugin.PluginManagerProvider
@@ -61,6 +62,7 @@ import com.mbrlabs.mundus.editorcommons.events.GameObjectModifiedEvent
 import com.mbrlabs.mundus.editorcommons.events.ProjectChangedEvent
 import com.mbrlabs.mundus.editorcommons.events.SceneChangedEvent
 import com.mbrlabs.mundus.pluginapi.AssetExtension
+import com.mbrlabs.mundus.pluginapi.ComponentExtension
 import com.mbrlabs.mundus.pluginapi.CustomShaderRenderExtension
 import com.mbrlabs.mundus.pluginapi.DisposeExtension
 import com.mbrlabs.mundus.pluginapi.ToasterExtension
@@ -319,7 +321,21 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
         pluginManager.loadPlugins()
         pluginManager.startPlugins()
 
-        pluginManager.plugins.forEach { Mundus.postEvent(LogEvent("Plugin loaded: ${it.pluginId}")) }
+        pluginManager.plugins.forEach {
+            val pluginId = it.pluginId
+            Mundus.postEvent(LogEvent("Plugin loaded: $pluginId"))
+
+            pluginManager.getExtensions(ComponentExtension::class.java, pluginId).forEach {
+                try {
+                    if (Component.Type.entries.map {it.name}.contains(it.componentType)) {
+                        pluginManager.unloadPlugin(pluginId)
+                        Mundus.postEvent(LogEvent("Plugin uses protected component type, unloaded: $pluginId"))
+                    }
+                } catch (ex: Exception) {
+                    Mundus.postEvent(LogEvent(LogType.ERROR, "Exception during validate component type! $ex"))
+                }
+            }
+        }
 
         // Setup event handling in plugins
         val pluginEventManager =

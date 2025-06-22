@@ -39,7 +39,7 @@ public interface ComponentExtension extends ExtensionPoint {
     /**
      * @return The component type what the plugin use.
      */
-    Component.Type getComponentType();
+    String getComponentType();
 
     /**
      * @return The component name.

@@ -24,17 +24,22 @@ import com.mbrlabs.mundus.commons.scene3d.GameObject;
  */
 public interface Component {
 
+    /**
+     * Protected component types. Plugin should use different ones.
+     */
     enum Type {
-        MODEL, TERRAIN, LIGHT, PARTICLE_SYSTEM, WATER, CUSTOM_PROPERTIES, PHYSICS, NAVMESH, TERRAIN_MANAGER
+        MODEL, TERRAIN, LIGHT, WATER, CUSTOM_PROPERTIES, TERRAIN_MANAGER
     }
 
     GameObject getGameObject();
 
     void update(float delta);
 
-    Type getType();
+    String getType();
 
     void setType(Type type);
+
+    void setType(String type);
 
     void remove();
 

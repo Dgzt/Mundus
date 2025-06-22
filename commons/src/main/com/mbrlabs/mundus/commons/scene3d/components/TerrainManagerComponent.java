@@ -17,7 +17,7 @@ public class TerrainManagerComponent extends AbstractComponent {
     public TerrainManagerComponent(final GameObject go, final ProceduralGeneration proceduralGeneration) {
         super(go);
         this.proceduralGeneration = proceduralGeneration;
-        type = Type.TERRAIN_MANAGER;
+        setType(Type.TERRAIN_MANAGER);
     }
 
     @Override

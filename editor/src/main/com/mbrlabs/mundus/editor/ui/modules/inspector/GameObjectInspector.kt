@@ -114,18 +114,18 @@ class GameObjectInspector : VisTable() {
             componentWidgets.clear()
             for (component in gameObject!!.components) {
                 // model component widget!!
-                if (component.type == Component.Type.MODEL) {
+                if (Component.Type.MODEL.name.equals(component.type)) {
                     componentWidgets.add(ModelComponentWidget(component as ModelComponent))
                     // terrainAsset component widget
-                } else if (component.type == Component.Type.TERRAIN) {
+                } else if (Component.Type.TERRAIN.name.equals(component.type)) {
                     componentWidgets.add(TerrainComponentWidget(component as TerrainComponent))
-                } else if (component.type == Component.Type.WATER) {
+                } else if (Component.Type.WATER.name.equals(component.type)) {
                     componentWidgets.add(WaterComponentWidget(component as WaterComponent))
-                } else if (component.type == Component.Type.LIGHT) {
+                } else if (Component.Type.LIGHT.name.equals(component.type)) {
                     componentWidgets.add(LightComponentWidget(component as LightComponent))
-                } else if (component.type == Component.Type.CUSTOM_PROPERTIES) {
+                } else if (Component.Type.CUSTOM_PROPERTIES.name.equals(component.type)) {
                     componentWidgets.add(CustomPropertiesWidget(component as CustomPropertiesComponent))
-                } else if (component.type == Component.Type.TERRAIN_MANAGER) {
+                } else if (Component.Type.TERRAIN_MANAGER.name.equals(component.type)) {
                     componentWidgets.add(TerrainManagerComponentWidget(component as TerrainManagerComponent))
                 } else {
                     val customComponentWidget = createCustomComponentWidget(component)
@@ -163,7 +163,7 @@ class GameObjectInspector : VisTable() {
     private fun createCustomComponentWidget(component: Component): CustomComponentWidget<out AbstractComponent>? {
         pluginManager.getExtensions(ComponentExtension::class.java).forEach {
             try {
-                if (it.componentType == component.type) {
+                if (component.type != null && component.type.equals(it.componentType)) {
                     val rootWidget = RootWidgetImpl()
                     it.setupComponentInspectorWidget(component, rootWidget)
                     val componentWidget = CustomComponentWidget("${it.componentName} Component", rootWidget, component as AbstractComponent)

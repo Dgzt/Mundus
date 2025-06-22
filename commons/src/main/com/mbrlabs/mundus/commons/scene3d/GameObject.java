@@ -149,8 +149,9 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
      * @return components found
      */
     public <T extends Component> Array<T> findComponentsByType(Array<T> out, Component.Type type, boolean recursive) {
-        return findComponentsByType(out, this, type, recursive);
+        return findComponentsByType(out, this, type.name(), recursive);
     }
+
 
     /**
      * Finds one component by type.
@@ -160,10 +161,21 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
      * @return component if found or null
      */
     public <T extends Component> T findComponentByType(Component.Type type) {
+        return findComponentByType(type.name());
+    }
+
+    /**
+     * Finds one component by type.
+     *
+     * @param type
+     *            component type
+     * @return component if found or null
+     */
+    public <T extends Component> T findComponentByType(final String type) {
         // Use regular loop, to not conflict with nested iterators
         for (int i = 0; i < components.size; i++) {
             Component c = components.get(i);
-            if (c != null && c.getType() == type) return (T) c;
+            if (c != null && type.equals(c.getType())) return (T) c;
         }
         return null;
     }
@@ -419,10 +431,10 @@ public class GameObject extends SimpleNode<GameObject> implements Iterable<GameO
         }
     }
 
-    private <T extends Component> Array<T> findComponentsByType(Array<T> out, GameObject go, Component.Type type, boolean recursive) {
+    private <T extends Component> Array<T> findComponentsByType(Array<T> out, GameObject go, String type, boolean recursive) {
         for (int i = 0; i < go.components.size; ++i) {
             Component c = go.components.get(i);
-            if (c.getType() == type) out.add((T)c);
+            if (type.equals(c.getType())) out.add((T)c);
         }
 
         if (recursive && go.children != null) {

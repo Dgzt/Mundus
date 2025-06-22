@@ -26,7 +26,7 @@ public class CustomPropertiesComponent extends AbstractComponent {
     public CustomPropertiesComponent(final GameObject go) {
         super(go);
         this.customProperties = new OrderedMap<>(5);
-        type = Type.CUSTOM_PROPERTIES;
+        setType(Type.CUSTOM_PROPERTIES);
     }
 
     @Override

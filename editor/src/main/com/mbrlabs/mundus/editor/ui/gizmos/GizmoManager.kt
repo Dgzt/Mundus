@@ -76,7 +76,7 @@ class GizmoManager : ComponentAddedEvent.ComponentAddedListener,
     }
 
     override fun onComponentAdded(event: ComponentAddedEvent) {
-        if (event.component.type == Component.Type.LIGHT)
+        if (Component.Type.LIGHT.name.equals(event.component.type))
             gizmos.add(LightGizmo(event.component as LightComponent))
     }
 

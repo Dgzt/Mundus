@@ -33,7 +33,7 @@ public class LightComponent extends AbstractComponent implements DirtyListener {
         super(go);
         go.addDirtyListener(this);
 
-        type = Type.LIGHT;
+        setType(Type.LIGHT);
         this.lightType = lightType;
 
         switch (lightType) {

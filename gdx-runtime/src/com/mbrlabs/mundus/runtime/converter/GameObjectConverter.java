@@ -87,7 +87,7 @@ public class GameObjectConverter {
                 for (int ii = 0; ii < customComponentConverters.length; ++ii) {
                     final CustomComponentConverter converter = customComponentConverters[ii];
 
-                    if (customComponentDTO.getComponentType().equals(converter.getComponentType().name())) {
+                    if (customComponentDTO.getComponentType().equals(converter.getComponentType())) {
                         final Array<String> assetIds = customComponentDTO.getAssetIds();
                         final ObjectMap<String, Asset> assetMap = AssetUtils.getAssetsById(assetIds, assetManager.getAssetMap());
                         final Component component = converter.convert(go, customComponentDTO.getProperties(), assetMap);

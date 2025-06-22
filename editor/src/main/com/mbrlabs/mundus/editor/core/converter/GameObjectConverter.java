@@ -97,12 +97,12 @@ public class GameObjectConverter {
         if (dto.getCustomComponents() != null) {
             for (int i = 0; i < dto.getCustomComponents().size; ++i) {
                 final CustomComponentDTO customComponentDTO = dto.getCustomComponents().get(i);
-                final Component.Type componentType = Component.Type.valueOf(customComponentDTO.getComponentType());
+                final String componentType = customComponentDTO.getComponentType();
 
                 for (int ii = 0; ii < customComponentConverters.size; ++ii) {
                     final CustomComponentConverter converter = customComponentConverters.get(ii);
 
-                    if (componentType == converter.getComponentType()) {
+                    if (componentType != null && componentType.equals(converter.getComponentType())) {
                         final Array<String> assetIds = customComponentDTO.getAssetIds();
                         final ObjectMap<String, Asset> assetMap = AssetUtils.getAssetsById(assetIds, assets);
                         final Component customComponent = converter.convert(go, customComponentDTO.getProperties(), assetMap);
@@ -212,23 +212,23 @@ public class GameObjectConverter {
 
         // convert components
         for (Component c : go.getComponents()) {
-            if (c.getType() == Component.Type.MODEL) {
+            if (Component.Type.MODEL.name().equals(c.getType())) {
                 descriptor.setModelComponent(ModelComponentConverter.convert((PickableModelComponent) c));
-            } else if (c.getType() == Component.Type.TERRAIN) {
+            } else if (Component.Type.TERRAIN.name().equals(c.getType())) {
                 descriptor.setTerrainComponent(TerrainComponentConverter.convert((PickableTerrainComponent) c));
-            } else if (c.getType() == Component.Type.WATER) {
+            } else if (Component.Type.WATER.name().equals(c.getType())) {
                 descriptor.setWaterComponent(WaterComponentConverter.convert((PickableWaterComponent) c));
-            } else if (c.getType() == Component.Type.LIGHT) {
+            } else if (Component.Type.LIGHT.name().equals(c.getType())) {
                 descriptor.setLightComponent(PickableLightComponentConverter.convert((LightComponent) c));
-            } else if (c.getType() == Component.Type.CUSTOM_PROPERTIES) {
+            } else if (Component.Type.CUSTOM_PROPERTIES.name().equals(c.getType())) {
                 descriptor.setCustomPropertiesComponent(CustomPropertiesComponentConverter.convert((CustomPropertiesComponent) c));
-            } else if (c.getType() == Component.Type.TERRAIN_MANAGER) {
+            } else if (Component.Type.TERRAIN_MANAGER.name().equals(c.getType())) {
                 descriptor.setTerrainManagerComponent(TerrainManagerComponentConverter.convert((TerrainManagerComponent) c));
             } else if (c.getType() != null) {
                 for (int i = 0; i < customComponentConverters.size; ++i) {
                     final CustomComponentConverter converter = customComponentConverters.get(i);
 
-                    if (c.getType() == converter.getComponentType()) {
+                    if (c.getType().equals(converter.getComponentType())) {
                         final OrderedMap<String, String> customComponentProperties = converter.convert(c);
 
                         if (customComponentProperties != null) {
@@ -237,7 +237,7 @@ public class GameObjectConverter {
                             }
 
                             final CustomComponentDTO customComponentDTO = new CustomComponentDTO();
-                            customComponentDTO.setComponentType(c.getType().name());
+                            customComponentDTO.setComponentType(c.getType());
                             customComponentDTO.setProperties(customComponentProperties);
                             customComponentDTO.setAssetIds(converter.getAssetIds(c));
 

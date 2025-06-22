@@ -54,7 +54,7 @@ public class TerrainComponent extends CullableComponent implements AssetUsage, R
 
     public TerrainComponent(GameObject go) {
         super(go);
-        type = Component.Type.TERRAIN;
+        setType(Component.Type.TERRAIN);
         lodManager = new TerrainLevelOfDetailManager(this);
     }
 

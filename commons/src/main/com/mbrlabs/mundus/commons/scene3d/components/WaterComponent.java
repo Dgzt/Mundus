@@ -35,7 +35,7 @@ public class WaterComponent extends CullableComponent implements AssetUsage, Ren
     public WaterComponent(GameObject go, Shader shader) {
         super(go);
         this.shader = shader;
-        type = Component.Type.WATER;
+        setType(Component.Type.WATER);
     }
 
     @Override

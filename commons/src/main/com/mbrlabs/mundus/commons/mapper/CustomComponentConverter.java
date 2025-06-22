@@ -28,7 +28,7 @@ public interface CustomComponentConverter {
     /**
      * @return The component type of custom component.
      */
-    Component.Type getComponentType();
+    String getComponentType();
 
     /**
      * Converts component into map for persisting.

@@ -97,7 +97,7 @@ public class SceneLoader {
                 continue;
             }
             // Model component
-            if (c.getType() == Component.Type.MODEL) {
+            if (Component.Type.MODEL.name().equals(c.getType())) {
                 ModelComponent modelComponent = (ModelComponent) c;
                 ModelAsset model = findModelById(models, modelComponent.getModelAsset().getID());
                 if (model != null) {
@@ -105,7 +105,7 @@ public class SceneLoader {
                 } else {
                     Gdx.app.error(TAG, "Could not find model for instance: " + modelComponent.getModelAsset().getID());
                 }
-            } else if (c.getType() == Component.Type.WATER) {
+            } else if (Component.Type.WATER.name().equals(c.getType())) {
                 ((WaterComponent) c).getWaterAsset().water.setTransform(go.getTransform());
             }
 

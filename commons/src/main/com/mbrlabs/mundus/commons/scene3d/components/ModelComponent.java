@@ -43,7 +43,7 @@ public class ModelComponent extends CullableComponent implements AssetUsage, Mod
 
     public ModelComponent(GameObject go) {
         super(go);
-        type = Type.MODEL;
+        setType(Type.MODEL);
         materials = new ObjectMap<>();
     }
 

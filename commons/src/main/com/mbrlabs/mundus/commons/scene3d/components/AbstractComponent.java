@@ -25,6 +25,9 @@ import com.mbrlabs.mundus.commons.scene3d.GameObject;
 public abstract class AbstractComponent implements Component {
 
     public GameObject gameObject;
+    /**
+     * Protected values from {@link Component.Type} or custom values from plugins or runtime
+     */
     protected String type;
 
     public AbstractComponent(GameObject go) {

@@ -327,6 +327,11 @@ class Editor : Lwjgl3WindowAdapter(), ApplicationListener,
 
             pluginManager.getExtensions(ComponentExtension::class.java, pluginId).forEach {
                 try {
+                    if (it.componentType == null || it.componentType.isBlank()) {
+                        pluginManager.unloadPlugin(pluginId)
+                        Mundus.postEvent(LogEvent("Plugin does not have component type, unloaded: $pluginId"))
+                    }
+
                     if (Component.Type.entries.map {it.name}.contains(it.componentType)) {
                         pluginManager.unloadPlugin(pluginId)
                         Mundus.postEvent(LogEvent("Plugin uses protected component type, unloaded: $pluginId"))

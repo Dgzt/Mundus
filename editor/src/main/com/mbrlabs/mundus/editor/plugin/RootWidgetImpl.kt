@@ -21,6 +21,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Array
+import com.kotcrab.vis.ui.util.dialog.Dialogs
+import com.kotcrab.vis.ui.util.dialog.InputDialogAdapter
 import com.kotcrab.vis.ui.widget.VisCheckBox
 import com.kotcrab.vis.ui.widget.VisRadioButton
 import com.kotcrab.vis.ui.widget.VisSelectBox
@@ -42,6 +44,7 @@ import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.editor.ui.modules.dialogs.assets.AssetPickerDialog
 import com.mbrlabs.mundus.editor.ui.widgets.SliderWithSpinnerWidget
 import com.mbrlabs.mundus.editorcommons.assets.EditorModelAsset
+import com.mbrlabs.mundus.pluginapi.listener.StringInputDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.ButtonListener
 import com.mbrlabs.mundus.pluginapi.ui.CheckboxListener
 import com.mbrlabs.mundus.pluginapi.ui.FloatSpinnerListener
@@ -268,6 +271,16 @@ class RootWidgetImpl : VisTable(), RootWidget {
                 } catch (e: IOException) {
                     e.printStackTrace()
                     UI.toaster.error("Error while selected model asset")
+                }
+            }
+        })
+    }
+
+    override fun showStringInputDialog(text: String, listener: StringInputDialogListener) {
+        Dialogs.showInputDialog(UI, text, "", object : InputDialogAdapter() {
+            override fun finished(input: String?) {
+                if (input != null) {
+                    listener.onInput(input)
                 }
             }
         })

@@ -17,6 +17,7 @@
 package com.mbrlabs.mundus.pluginapi.ui;
 
 import com.badlogic.gdx.utils.Array;
+import com.mbrlabs.mundus.pluginapi.listener.StringInputDialogListener;
 
 /**
  * The root wigdet for plugin.
@@ -208,4 +209,12 @@ public interface RootWidget {
      * @param listener The listener.
      */
     void showModelAssetSelectionDialog(ModelAssetSelectionDialogListener listener);
+
+    /**
+     * Shows string input dialog.
+     *
+     * @param text The text before input field.
+     * @param listener The listener.
+     */
+    void showStringInputDialog(String text, StringInputDialogListener listener);
 }

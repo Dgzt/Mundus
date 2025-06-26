@@ -34,8 +34,11 @@ import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.kotcrab.vis.ui.widget.spinner.SpinnerModel
 import com.mbrlabs.mundus.commons.assets.Asset
+import com.mbrlabs.mundus.commons.assets.CustomAsset
 import com.mbrlabs.mundus.commons.assets.TextureAsset
 import com.mbrlabs.mundus.editor.Mundus
+import com.mbrlabs.mundus.editor.assets.AssetCustomFilter
+import com.mbrlabs.mundus.editor.assets.AssetCustomPluginFilter
 import com.mbrlabs.mundus.editor.assets.AssetModelFilter
 import com.mbrlabs.mundus.editor.assets.AssetTextureFilter
 import com.mbrlabs.mundus.editor.events.LogEvent
@@ -53,6 +56,8 @@ import com.mbrlabs.mundus.pluginapi.ui.RootWidget
 import com.mbrlabs.mundus.pluginapi.ui.IntSpinnerListener
 import com.mbrlabs.mundus.pluginapi.ui.SpinnerListener
 import com.mbrlabs.mundus.pluginapi.ui.Cell
+import com.mbrlabs.mundus.pluginapi.ui.CustomAssetFilter
+import com.mbrlabs.mundus.pluginapi.ui.CustomAssetSelectionDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.LabelCell
 import com.mbrlabs.mundus.pluginapi.ui.ModelAssetSelectionDialogListener
 import com.mbrlabs.mundus.pluginapi.ui.RootWidgetCell
@@ -271,6 +276,23 @@ class RootWidgetImpl : VisTable(), RootWidget {
                 } catch (e: IOException) {
                     e.printStackTrace()
                     UI.toaster.error("Error while selected model asset")
+                }
+            }
+        })
+    }
+
+    override fun showCustomAssetSelectionDialog(customAssetFilter: CustomAssetFilter, listener: CustomAssetSelectionDialogListener) {
+        val filter = object : AssetCustomPluginFilter {
+            override fun isSelectable(asset: CustomAsset): Boolean = customAssetFilter.isVisible(asset)
+        }
+
+        UI.assetSelectionDialog.show(false, AssetCustomFilter(filter), object: AssetPickerDialog.AssetPickerListener {
+            override fun onSelected(asset: Asset?) {
+                try {
+                    listener.onSelected(asset as CustomAsset)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    UI.toaster.error("Error while selected custom asset")
                 }
             }
         })

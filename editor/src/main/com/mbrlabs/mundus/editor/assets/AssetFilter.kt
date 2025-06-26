@@ -17,6 +17,7 @@
 package com.mbrlabs.mundus.editor.assets
 
 import com.mbrlabs.mundus.commons.assets.Asset
+import com.mbrlabs.mundus.commons.assets.CustomAsset
 import com.mbrlabs.mundus.commons.assets.MaterialAsset
 import com.mbrlabs.mundus.commons.assets.TerrainLayerAsset
 import com.mbrlabs.mundus.commons.assets.TextureAsset
@@ -61,4 +62,14 @@ class AssetModelFilter : AssetFilter {
     override fun ignore(asset: Asset): Boolean {
         return asset !is EditorModelAsset
     }
+}
+
+class AssetCustomFilter(val filter: AssetCustomPluginFilter?) : AssetFilter {
+    override fun ignore(asset: Asset): Boolean {
+        return asset !is CustomAsset || (filter != null && !filter.isSelectable(asset))
+    }
+}
+
+interface AssetCustomPluginFilter {
+    fun isSelectable(asset: CustomAsset): Boolean
 }

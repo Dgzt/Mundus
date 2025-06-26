@@ -211,6 +211,14 @@ public interface RootWidget {
     void showModelAssetSelectionDialog(ModelAssetSelectionDialogListener listener);
 
     /**
+     * Shows custom asset selection dialog.
+     *
+     * @param filter The filter to filter out not relevant custom assets.
+     * @param listener The listener.
+     */
+    void showCustomAssetSelectionDialog(CustomAssetFilter filter, CustomAssetSelectionDialogListener listener);
+
+    /**
      * Shows string input dialog.
      *
      * @param text The text before input field.

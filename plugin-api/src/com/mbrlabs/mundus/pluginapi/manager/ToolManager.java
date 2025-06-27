@@ -21,4 +21,6 @@ import com.mbrlabs.mundus.pluginapi.listener.ToolListener;
 public interface ToolManager {
 
     void activateCustomTool(ToolListener listener);
+
+    void deactivateCustomTool();
 }

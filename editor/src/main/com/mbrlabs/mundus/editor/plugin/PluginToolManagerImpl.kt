@@ -28,4 +28,10 @@ class PluginToolManagerImpl : ToolManager {
         toolManager.pluginTool.listener = listener
         toolManager.activateTool(toolManager.pluginTool)
     }
+
+    override fun deactivateCustomTool() {
+        if (toolManager.pluginTool == toolManager.activeTool) {
+            toolManager.setDefaultTool()
+        }
+    }
 }

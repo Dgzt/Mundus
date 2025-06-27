@@ -16,7 +16,6 @@
 
 package com.mbrlabs.mundus.editor.plugin
 
-import com.badlogic.gdx.utils.Array
 import com.kotcrab.vis.ui.VisUI
 import com.mbrlabs.mundus.commons.utils.TextureProvider
 import com.mbrlabs.mundus.pluginapi.ui.TextureGrid
@@ -32,13 +31,8 @@ class TextureGridImpl : com.mbrlabs.mundus.editor.ui.widgets.TextureGrid<Texture
         super<com.mbrlabs.mundus.editor.ui.widgets.TextureGrid>.addTexture(textureWithPosition)
     }
 
-    override fun setTextures(textures: Array<TextureProvider>) {
-        val textureWithPositions = Array<TextureGridItemWithPosition>()
-        for (i in 0 until textures.size) {
-            val texture = textures.get(i)
-            textureWithPositions.add(TextureGridItemWithPosition(texture, countTextures()))
-        }
-
-        super<com.mbrlabs.mundus.editor.ui.widgets.TextureGrid>.setTextures(textureWithPositions as Array<TextureProvider>)
+    override fun removeTextures() {
+        super.removeTextures()
     }
+
 }

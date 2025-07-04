@@ -16,19 +16,11 @@
 
 package com.mbrlabs.mundus.pluginapi.manager;
 
-public interface ManagerHolder {
+public interface TerrainPickerManager {
 
-    PluginEventManager getEventManager();
+    void activate(boolean active);
 
-    AssetManager getAssetManager();
+    void setPosition(float x, float y, float z);
 
-    ToasterManager getToasterManager();
-
-    ToolManager getToolManager();
-
-    ViewportManager getViewportManager();
-
-    GameObjectPickerManager getGameObjectPickerManager();
-
-    TerrainPickerManager getTerrainPickerManager();
+    void setRadius(float radius);
 }

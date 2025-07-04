@@ -18,8 +18,10 @@ package com.mbrlabs.mundus.editor.plugin
 
 import com.mbrlabs.mundus.editor.Mundus
 import com.mbrlabs.mundus.pluginapi.manager.AssetManager
+import com.mbrlabs.mundus.pluginapi.manager.GameObjectPickerManager
 import com.mbrlabs.mundus.pluginapi.manager.ManagerHolder
 import com.mbrlabs.mundus.pluginapi.manager.PluginEventManager
+import com.mbrlabs.mundus.pluginapi.manager.TerrainPickerManager
 import com.mbrlabs.mundus.pluginapi.manager.ToasterManager
 import com.mbrlabs.mundus.pluginapi.manager.ToolManager
 import com.mbrlabs.mundus.pluginapi.manager.ViewportManager
@@ -38,4 +40,8 @@ class ManagerHolderImpl : ManagerHolder {
     override fun getToolManager(): ToolManager = PluginToolManagerImpl()
 
     override fun getViewportManager(): ViewportManager = ViewportManagerImpl()
+
+    override fun getGameObjectPickerManager(): GameObjectPickerManager = GameObjectPickerManagerImpl()
+
+    override fun getTerrainPickerManager(): TerrainPickerManager = TerrainPickerManagerImpl()
 }

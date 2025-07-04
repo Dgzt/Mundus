@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.mbrlabs.mundus.pluginapi.manager;
+package com.mbrlabs.mundus.editor.plugin
 
-public interface ManagerHolder {
+import com.mbrlabs.mundus.editor.shader.EditorPBRTerrainShader
+import com.mbrlabs.mundus.pluginapi.manager.TerrainPickerManager
 
-    PluginEventManager getEventManager();
+class TerrainPickerManagerImpl : TerrainPickerManager {
 
-    AssetManager getAssetManager();
+    override fun activate(active: Boolean) {
+        EditorPBRTerrainShader.activatePicker(active)
+    }
 
-    ToasterManager getToasterManager();
+    override fun setPosition(x: Float, y: Float, z: Float) {
+        EditorPBRTerrainShader.setPickerPosition(x, y, z)
+    }
 
-    ToolManager getToolManager();
-
-    ViewportManager getViewportManager();
-
-    GameObjectPickerManager getGameObjectPickerManager();
-
-    TerrainPickerManager getTerrainPickerManager();
+    override fun setRadius(radius: Float) {
+        EditorPBRTerrainShader.setPickerRadius(radius)
+    }
 }

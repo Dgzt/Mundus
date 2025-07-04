@@ -16,19 +16,23 @@
 
 package com.mbrlabs.mundus.pluginapi.manager;
 
-public interface ManagerHolder {
+import com.mbrlabs.mundus.commons.scene3d.GameObject;
 
-    PluginEventManager getEventManager();
+public interface GameObjectPickerManager {
 
-    AssetManager getAssetManager();
+    enum ComponentType{
+        TERRAIN,
+        WATER,
+        MODEL
+    }
 
-    ToasterManager getToasterManager();
-
-    ToolManager getToolManager();
-
-    ViewportManager getViewportManager();
-
-    GameObjectPickerManager getGameObjectPickerManager();
-
-    TerrainPickerManager getTerrainPickerManager();
+    /**
+     * Pick a game object by screen positions.
+     *
+     * @param screenX The x screen coordinate value
+     * @param screenY The y screen coordinate value
+     * @param componentTypes The pickable component types
+     * @return The game object or null
+     */
+    GameObject pick(int screenX, int screenY, ComponentType... componentTypes);
 }

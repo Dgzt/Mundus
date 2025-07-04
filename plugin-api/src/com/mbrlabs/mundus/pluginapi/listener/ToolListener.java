@@ -20,6 +20,8 @@ public interface ToolListener {
 
     void touchDown(int screenX, int screenY, int buttonId);
 
+    void touchDragged(int screenX, int screenY);
+
     void mouseMoved(int screenX, int screenY);
 
     void onDisabled();

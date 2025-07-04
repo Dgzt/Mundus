@@ -64,4 +64,9 @@ class PluginTool(projectManager: ProjectManager, history: CommandHistory) : Tool
         return true
     }
 
+    override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+        listener.touchDragged(screenX, screenY)
+        return true
+    }
+
 }

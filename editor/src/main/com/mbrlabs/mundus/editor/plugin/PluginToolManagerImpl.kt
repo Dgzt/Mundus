@@ -25,8 +25,8 @@ class PluginToolManagerImpl : ToolManager {
     private val toolManager = Mundus.inject<com.mbrlabs.mundus.editor.tools.ToolManager>()
 
     override fun activateCustomTool(listener: ToolListener) {
-        toolManager.pluginTool.listener = listener
         toolManager.activateTool(toolManager.pluginTool)
+        toolManager.pluginTool.listener = listener
     }
 
     override fun deactivateCustomTool() {

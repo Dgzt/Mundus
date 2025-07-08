@@ -35,4 +35,8 @@ class TextureGridImpl : com.mbrlabs.mundus.editor.ui.widgets.TextureGrid<Texture
         super.removeTextures()
     }
 
+    override fun highlight(id: Int) {
+        super.highlight(id)
+    }
+
 }

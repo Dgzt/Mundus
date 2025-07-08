@@ -82,8 +82,12 @@ public class TextureGrid<T extends TextureProvider> extends VisTable {
     }
 
     public void highlightFirst() {
-        final TextureItem<T> first = (TextureItem<T>) grid.getChildren().first();
-        first.highlight();
+        highlight(0);
+    }
+
+    public void highlight(int id) {
+        final TextureItem<T> textureItem = (TextureItem<T>) grid.getChildren().get(id);
+        textureItem.highlight();
     }
 
     /**

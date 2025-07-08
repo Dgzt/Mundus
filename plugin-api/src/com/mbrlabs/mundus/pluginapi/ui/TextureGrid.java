@@ -23,4 +23,6 @@ public interface TextureGrid {
     void addTexture(TextureProvider texture);
 
     void removeTextures();
+
+    void highlight(int id);
 }

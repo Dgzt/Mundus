@@ -212,12 +212,18 @@ class RootWidgetImpl : VisTable(), RootWidget {
     }
 
     override fun addSliderWithSpinnerWidget(min: Float, max: Float, stepSize: Float, precision: Int, listener: SliderWithSpinnerListener): Cell {
+        return addSliderWithSpinnerWidget(min, max, min, stepSize, precision, listener)
+    }
+
+    override fun addSliderWithSpinnerWidget(min: Float, max: Float, initValue: Float, stepSize: Float, precision: Int, listener: SliderWithSpinnerListener): Cell {
         val sliderWithSpinner = SliderWithSpinnerWidget(min, max, stepSize, precision)
         sliderWithSpinner.listener = object : SliderWithSpinnerWidget.SliderWithSpinnerListener {
             override fun changed(value: Float) {
                 listener.changed(value)
             }
         }
+
+        sliderWithSpinner.setValue(initValue)
 
         val cell = add(sliderWithSpinner)
         return CellImpl(cell)

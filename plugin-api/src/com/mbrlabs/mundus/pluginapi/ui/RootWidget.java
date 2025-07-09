@@ -171,6 +171,19 @@ public interface RootWidget {
     Cell addSliderWithSpinnerWidget(float min, float max, float stepSize, int precision, SliderWithSpinnerListener listener);
 
     /**
+     * Adds slider with spinner widget.
+     *
+     * @param min The min value.
+     * @param max The max value.
+     * @param initValue The init value.
+     * @param stepSize The step size.
+     * @param precision The precision.
+     * @param listener The listener.
+     * @return The slider with spinner widget.
+     */
+    Cell addSliderWithSpinnerWidget(float min, float max, float initValue, float stepSize, int precision, SliderWithSpinnerListener listener);
+
+    /**
      * Adds texture grid widget.
      *
      * @param changeRightClickMenu Show change right click menu item.

@@ -16,7 +16,12 @@
 
 package com.mbrlabs.mundus.pluginapi.ui;
 
-public interface TextureGridListener {
+public interface TextureGridRightClickMenuItem {
 
-    void onSelect(int pos);
+    /**
+     * @return Name of the menu item.
+     */
+    String getName();
+
+    void onClick(int pos);
 }

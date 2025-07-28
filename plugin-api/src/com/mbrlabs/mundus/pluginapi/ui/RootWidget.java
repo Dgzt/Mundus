@@ -186,12 +186,11 @@ public interface RootWidget {
     /**
      * Adds texture grid widget.
      *
-     * @param changeRightClickMenu Show change right click menu item.
-     * @param removeRightClickMenu Show remove right click menu item.
+     * @param rightClickMenuItems The right click menu items with listeners.
      * @param listener The right click listener.
      * @return The texture grid widget.
      */
-    TextureGridCell addTextureGrid(boolean changeRightClickMenu, boolean removeRightClickMenu, TextureGridListener listener);
+    TextureGridCell addTextureGrid(Array<TextureGridRightClickMenuItem> rightClickMenuItems, TextureGridListener listener);
 
     /**
      * Adds row.

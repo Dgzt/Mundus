@@ -19,46 +19,32 @@ package com.mbrlabs.mundus.editor.plugin
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.badlogic.gdx.utils.Array
 import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.mbrlabs.mundus.editor.ui.UI
 import com.mbrlabs.mundus.pluginapi.ui.TextureGridListener
+import com.mbrlabs.mundus.pluginapi.ui.TextureGridRightClickMenuItem
 
-class TextureGridRightClickMenu(changeRightClickMenu: Boolean, removeRightClickMenu: Boolean, val listener: TextureGridListener) : PopupMenu() {
-
-    private val changeMenuItem = MenuItem("Change")
-    private val removeMenuItem = MenuItem("Remove")
+class TextureGridRightClickMenu(rightClickMenuItems: Array<TextureGridRightClickMenuItem>, val listener: TextureGridListener) : PopupMenu() {
 
     private var pos = -1
 
     init {
-        if (changeRightClickMenu) {
-            addItem(changeMenuItem)
-        }
+        for (rightClickMenuItem in rightClickMenuItems) {
+            val menuItem = MenuItem(rightClickMenuItem.name)
+            addItem(menuItem)
 
-        if (removeRightClickMenu) {
-            addItem(removeMenuItem)
+            menuItem.addListener(object : ClickListener() {
+                override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                    rightClickMenuItem.onClick(pos)
+                }
+            })
         }
-
-        setupSubscriptions()
     }
 
     fun show(pos: Int) {
         this.pos = pos
         showMenu(UI, Gdx.input.x.toFloat(), (Gdx.graphics.height - Gdx.input.y).toFloat())
-    }
-
-    private fun setupSubscriptions() {
-        changeMenuItem.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                listener.onChange(pos)
-            }
-        })
-
-        removeMenuItem.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                listener.onRemove(pos)
-            }
-        })
     }
 }
